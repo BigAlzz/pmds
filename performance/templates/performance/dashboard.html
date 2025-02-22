@@ -1,0 +1,192 @@
+{% extends 'performance/base.html' %}
+
+{% block title %}Dashboard - Performance Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Welcome, {{ user.get_full_name }}</h2>
+
+    <!-- Performance Agreements -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Performance Agreements</h5>
+            <a href="{% url 'performance:performance_agreement_create' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus"></i> New Agreement
+            </a>
+        </div>
+        <div class="card-body">
+            {% if performance_agreements %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for agreement in performance_agreements %}
+                            <tr>
+                                <td>{{ agreement.agreement_date|date:"M d, Y" }}</td>
+                                <td><span class="badge bg-{{ agreement.status|lower }}">{{ agreement.get_status_display }}</span></td>
+                                <td>
+                                    <a href="{% url 'performance:performance_agreement_detail' agreement.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No performance agreements found.
+                    <a href="{% url 'performance:performance_agreement_create' %}" class="alert-link">Create your first agreement</a>.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Mid-Year Reviews -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Mid-Year Reviews</h5>
+            <a href="{% url 'performance:midyear_review_create' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus"></i> New Review
+            </a>
+        </div>
+        <div class="card-body">
+            {% if reviews %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Rating</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for review in reviews %}
+                            <tr>
+                                <td>{{ review.review_date|date:"M d, Y" }}</td>
+                                <td>{{ review.get_final_rating_display }}</td>
+                                <td>
+                                    <a href="{% url 'performance:midyear_review_detail' review.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No reviews found.
+                    <a href="{% url 'performance:midyear_review_create' %}" class="alert-link">Create your first review</a>.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Improvement Plans -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Improvement Plans</h5>
+            <a href="{% url 'performance:improvement_plan_create' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus"></i> New Plan
+            </a>
+        </div>
+        <div class="card-body">
+            {% if improvement_plans %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Area</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in improvement_plans %}
+                            <tr>
+                                <td>{{ plan.area_for_development }}</td>
+                                <td><span class="badge bg-{{ plan.status|lower }}">{{ plan.get_status_display }}</span></td>
+                                <td>
+                                    <a href="{% url 'performance:improvement_plan_detail' plan.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No improvement plans found.
+                    <a href="{% url 'performance:improvement_plan_create' %}" class="alert-link">Create your first plan</a>.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Development Plans -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Development Plans</h5>
+            <a href="{% url 'performance:development_plan_create' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus"></i> New Plan
+            </a>
+        </div>
+        <div class="card-body">
+            {% if development_plans %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Competency Gap</th>
+                                <th>Progress</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in development_plans %}
+                            <tr>
+                                <td>{{ plan.competency_gap }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar {% if plan.progress >= 100 %}bg-success{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ plan.progress }}%"
+                                             aria-valuenow="{{ plan.progress }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            {{ plan.progress }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{% url 'performance:development_plan_detail' plan.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No development plans found.
+                    <a href="{% url 'performance:development_plan_create' %}" class="alert-link">Create your first plan</a>.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'performance/base.html' %}
+
+{% block title %}Improvement Plan Details - Performance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Improvement Plan Details</h4>
+                    <div>
+                        {% if object.can_edit %}
+                        <a href="{% url 'improvement_plan_update' object.pk %}" class="btn btn-outline-primary">
+                            Edit Plan
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'improvement_plan_list' %}" class="btn btn-outline-secondary">
+                            Back to List
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Employee</h5>
+                            <p>{{ object.employee.get_full_name }}</p>
+                            
+                            <h5>Department</h5>
+                            <p>{{ object.employee.department }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Status</h5>
+                            <span class="badge bg-{{ object.status|lower }}">
+                                {{ object.get_status_display }}
+                            </span>
+                            
+                            {% if object.approved_by %}
+                            <h5 class="mt-3">Approved By</h5>
+                            <p>{{ object.approved_by.get_full_name }}</p>
+                            <p><small>{{ object.approval_date|date:"F d, Y" }}</small></p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Area for Development</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ object.area_for_development|linebreaks }}
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Interventions</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ object.interventions|linebreaks }}
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Timeline</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ object.timeline|linebreaks }}
+                        </div>
+                    </div>
+
+                    {% if object.status == 'COMPLETED' %}
+                    <div class="alert alert-success mt-4">
+                        <h5>Completion Status</h5>
+                        <p>This improvement plan has been successfully completed.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

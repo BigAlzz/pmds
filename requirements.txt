@@ -1,0 +1,15 @@
+Django==5.0.2
+django-crispy-forms==2.1
+crispy-bootstrap5==2023.10
+django-notifications-hq==1.8.3
+django-simple-history==3.4.0
+reportlab==4.1.0
+Pillow==10.2.0
+python-dateutil==2.8.2
+django-environ==0.11.2
+gunicorn==21.2.0
+whitenoise==6.6.0
+psycopg2-binary==2.9.9
+django-debug-toolbar==4.3.0
+django-cron>=0.6.0
+python-dotenv>=1.0.0 

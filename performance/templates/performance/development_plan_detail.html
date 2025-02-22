@@ -1,0 +1,89 @@
+{% extends 'performance/base.html' %}
+
+{% block title %}Development Plan Details - Performance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Development Plan Details</h4>
+                    <div>
+                        {% if object.can_edit %}
+                        <a href="{% url 'development_plan_update' object.pk %}" class="btn btn-outline-primary">
+                            Edit Plan
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'development_plan_list' %}" class="btn btn-outline-secondary">
+                            Back to List
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Employee</h5>
+                            <p>{{ object.employee.get_full_name }}</p>
+                            
+                            <h5>Department</h5>
+                            <p>{{ object.employee.department }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Timeline</h5>
+                            <p>Start: {{ object.start_date|date:"F d, Y" }}</p>
+                            <p>End: {{ object.end_date|date:"F d, Y" }}</p>
+                            
+                            <h5>Progress</h5>
+                            <div class="progress">
+                                <div class="progress-bar {% if object.progress >= 100 %}bg-success{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ object.progress }}%"
+                                     aria-valuenow="{{ object.progress }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ object.progress }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Competency Gap</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ object.competency_gap|linebreaks }}
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Development Activities</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ object.development_activities|linebreaks }}
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Expected Outcome</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ object.expected_outcome|linebreaks }}
+                        </div>
+                    </div>
+
+                    {% if object.progress >= 100 %}
+                    <div class="alert alert-success mt-4">
+                        <h5>Completion Status</h5>
+                        <p>This development plan has been successfully completed!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

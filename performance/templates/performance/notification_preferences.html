@@ -1,0 +1,82 @@
+{% extends 'performance/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Notification Preferences</h2>
+        <a href="{% url 'notification_list' %}" class="btn btn-outline-primary">
+            <i class="bi bi-bell"></i> Back to Notifications
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Email Settings</h5>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="email_notifications" 
+                                   name="email_notifications" {% if preferences.email_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="email_notifications">
+                                <i class="bi bi-envelope"></i> Receive Email Notifications
+                            </label>
+                        </div>
+
+                        <h5 class="mb-3 mt-4">Notification Types</h5>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="review_reminders" 
+                                   name="review_reminders" {% if preferences.review_reminders %}checked{% endif %}>
+                            <label class="form-check-label" for="review_reminders">
+                                <i class="bi bi-calendar-check"></i> Review Reminders
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="plan_updates" 
+                                   name="plan_updates" {% if preferences.plan_updates %}checked{% endif %}>
+                            <label class="form-check-label" for="plan_updates">
+                                <i class="bi bi-pencil-square"></i> Plan Updates
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="feedback_notifications" 
+                                   name="feedback_notifications" {% if preferences.feedback_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="feedback_notifications">
+                                <i class="bi bi-chat-dots"></i> Feedback Notifications
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Reminder Frequency</h5>
+                        <div class="form-group">
+                            <select class="form-select" id="reminder_frequency" name="reminder_frequency">
+                                <option value="DAILY" {% if preferences.reminder_frequency == 'DAILY' %}selected{% endif %}>
+                                    Daily Reminders
+                                </option>
+                                <option value="WEEKLY" {% if preferences.reminder_frequency == 'WEEKLY' %}selected{% endif %}>
+                                    Weekly Reminders
+                                </option>
+                                <option value="MONTHLY" {% if preferences.reminder_frequency == 'MONTHLY' %}selected{% endif %}>
+                                    Monthly Reminders
+                                </option>
+                            </select>
+                            <small class="form-text text-muted">
+                                Choose how often you want to receive reminder notifications
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Preferences
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

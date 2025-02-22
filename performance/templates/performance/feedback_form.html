@@ -1,0 +1,61 @@
+{% extends 'performance/base.html' %}
+
+{% block title %}Submit Feedback - Performance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Submit Feedback</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <h5>Your Feedback</h5>
+                            {{ form.feedback }}
+                            <small class="form-text text-muted">Share your thoughts, suggestions, or concerns about the performance management process.</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.anonymous }}
+                                <label class="form-check-label" for="{{ form.anonymous.id_for_label }}">
+                                    Submit Anonymously
+                                </label>
+                                <small class="form-text text-muted d-block">
+                                    Check this box if you want to submit your feedback anonymously.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                            <a href="{% url 'performance:dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">About Feedback</h5>
+                </div>
+                <div class="card-body">
+                    <p>Your feedback is valuable to us and helps improve our performance management process. Here are some guidelines:</p>
+                    <ul>
+                        <li>Be specific and constructive in your feedback</li>
+                        <li>Focus on processes and systems rather than individuals</li>
+                        <li>Suggest improvements where possible</li>
+                        <li>Your feedback will be reviewed by the HR team</li>
+                        <li>If submitted anonymously, your identity will be protected</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

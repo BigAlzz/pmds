@@ -1,0 +1,108 @@
+{% extends 'performance/base.html' %}
+{% load performance_tags %}
+
+{% block title %}Performance Agreements - Performance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Performance Agreements</h4>
+            <a href="{% url 'performance:performance_agreement_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Agreement
+            </a>
+        </div>
+        <div class="card-body">
+            {% if agreements %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee</th>
+                            <th>Agreement Date</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for agreement in agreements %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-person-circle text-secondary me-2"></i>
+                                    {{ agreement.employee.get_full_name }}
+                                </div>
+                            </td>
+                            <td>{{ agreement.agreement_date|date:"F d, Y" }}</td>
+                            <td>{{ agreement.status|status_badge }}</td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <a href="{% url 'performance:performance_agreement_detail' agreement.id %}" 
+                                       class="btn btn-sm btn-primary"
+                                       title="View Agreement">
+                                        <i class="bi bi-eye"></i>
+                                        <span class="d-none d-md-inline ms-1">View</span>
+                                    </a>
+                                    {% if agreement.can_edit %}
+                                    <a href="{% url 'performance:performance_agreement_update' agreement.id %}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Edit Agreement">
+                                        <i class="bi bi-pencil"></i>
+                                        <span class="d-none d-md-inline ms-1">Edit</span>
+                                    </a>
+                                    {% endif %}
+                                    {% if agreement|can_delete_agreement:request.user %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteModal{{ agreement.id }}"
+                                            title="Delete Agreement">
+                                        <i class="bi bi-trash"></i>
+                                        <span class="d-none d-md-inline ms-1">Delete</span>
+                                    </button>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal{{ agreement.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Confirm Delete</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Are you sure you want to delete the performance agreement for <strong>{{ agreement.employee.get_full_name }}</strong>?</p>
+                                                <p class="text-danger">
+                                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                                    This action cannot be undone.
+                                                </p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{% url 'performance:performance_agreement_delete' agreement.id %}" method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="bi bi-trash"></i> Delete Agreement
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No performance agreements found.
+                <a href="{% url 'performance:performance_agreement_create' %}" class="alert-link">Create your first agreement</a>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

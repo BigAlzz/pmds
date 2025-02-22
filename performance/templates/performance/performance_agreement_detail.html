@@ -1,0 +1,315 @@
+{% extends 'performance/base.html' %}
+
+{% block title %}Performance Agreement Details - Performance Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-section {
+        margin-bottom: 2rem;
+    }
+    .table th {
+        background-color: #f8f9fa;
+    }
+    .review-dates {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .gaf-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .gaf-card.selected {
+        border-color: #198754;
+        background-color: #f8fff9;
+    }
+    .status-badge {
+        font-size: 0.9rem;
+        padding: 0.5em 1em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-11">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Performance Agreement Details</h4>
+                    <div>
+                        {% if agreement.can_edit %}
+                        <a href="{% url 'performance:performance_agreement_update' agreement.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Edit Agreement
+                        </a>
+                        {% endif %}
+
+                        {% if user == agreement.employee and agreement.status == 'DRAFT' %}
+                        <form method="post" action="{% url 'performance:performance_agreement_submit' agreement.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Submit for Approval
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if user == agreement.supervisor and agreement.status == 'PENDING_SUPERVISOR_APPROVAL' %}
+                        <form method="post" action="{% url 'performance:performance_agreement_approve' agreement.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Approve Agreement
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                            <i class="bi bi-x-circle"></i> Reject
+                        </button>
+                        {% endif %}
+
+                        <a href="{% url 'performance:export_agreement_pdf' agreement.pk %}" class="btn btn-outline-info" target="_blank">
+                            <i class="bi bi-file-pdf"></i> Export PDF
+                        </a>
+
+                        <a href="{% url 'performance:performance_agreement_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Employee and Agreement Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Employee Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <th>Name:</th>
+                                            <td>{{ agreement.employee.get_full_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Employee ID:</th>
+                                            <td>{{ agreement.employee.employee_id }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Department:</th>
+                                            <td>{{ agreement.employee.department }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Job Title:</th>
+                                            <td>{{ agreement.employee.job_title }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Supervisor Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <th>Name:</th>
+                                            <td>{{ agreement.supervisor.get_full_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Employee ID:</th>
+                                            <td>{{ agreement.supervisor.employee_id }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Department:</th>
+                                            <td>{{ agreement.supervisor.department }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Job Title:</th>
+                                            <td>{{ agreement.supervisor.job_title }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Agreement Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <th>Status:</th>
+                                            <td>
+                                                <span class="badge status-badge bg-{{ agreement.status|lower }}">
+                                                    {{ agreement.get_status_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Period:</th>
+                                            <td>{{ agreement.plan_start_date|date:"F d, Y" }} - {{ agreement.plan_end_date|date:"F d, Y" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Mid-Year Review:</th>
+                                            <td>{{ agreement.midyear_review_date|date:"F d, Y" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Final Assessment:</th>
+                                            <td>{{ agreement.final_assessment_date|date:"F d, Y" }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Result Areas -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Section A: Key Result Areas (KRAs)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Key Responsibility Areas</th>
+                                            <th>Performance Objective/Output</th>
+                                            <th>Weight</th>
+                                            <th>Key Performance Standards</th>
+                                            <th>Target Dates</th>
+                                            <th>Resource Requirements</th>
+                                            <th>Evidence</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for kra in agreement.kras.all %}
+                                        <tr>
+                                            <td>{{ kra.description }}</td>
+                                            <td>{{ kra.performance_objective }}</td>
+                                            <td>{{ kra.weighting }}%</td>
+                                            <td>{{ kra.measurement }}</td>
+                                            <td>{{ kra.target_date|date:"F d, Y" }}</td>
+                                            <td>
+                                                <strong>Tools:</strong><br>
+                                                {{ kra.tools|default:"N/A" }}<br>
+                                                <strong>Barriers:</strong><br>
+                                                {{ kra.barriers|default:"N/A" }}
+                                            </td>
+                                            <td>{{ kra.evidence_examples|default:"N/A" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                        <tr class="table-secondary">
+                                            <td colspan="2"><strong>Total Weighting</strong></td>
+                                            <td><strong>100%</strong></td>
+                                            <td colspan="4"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Generic Assessment Factors -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Section B: Generic Assessment Factors (GAFs)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for gaf in agreement.gafs.all %}
+                                {% if gaf.is_applicable %}
+                                <div class="col-md-6">
+                                    <div class="gaf-card selected">
+                                        <h6 class="mb-2">{{ gaf.get_factor_display }}</h6>
+                                        <div class="comments mt-2">
+                                            <strong>Comments:</strong>
+                                            <p class="mb-0">{{ gaf.comments|default:"No comments provided." }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comments Section -->
+                    {% if agreement.employee_comments or agreement.supervisor_comments %}
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Comments</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if agreement.employee_comments %}
+                            <div class="mb-4">
+                                <h6>Employee Comments</h6>
+                                <div class="p-3 bg-light rounded">
+                                    {{ agreement.employee_comments|linebreaks }}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if agreement.supervisor_comments %}
+                            <div>
+                                <h6>Supervisor Comments</h6>
+                                <div class="p-3 bg-light rounded">
+                                    {{ agreement.supervisor_comments|linebreaks }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel">Reject Performance Agreement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'performance:performance_agreement_reject' agreement.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="rejection_reason" class="form-label">Reason for Rejection</label>
+                        <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject Agreement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add any specific JavaScript for handling form submissions
+        const submitForms = document.querySelectorAll('form');
+        submitForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const submitButton = form.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,564 @@
+{% extends 'performance/base.html' %}
+{% load crispy_forms_tags %}
+{% load performance_tags %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Performance Agreement{% endblock %}
+
+{% block extra_css %}
+<style>
+    .table td {
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+    .table th {
+        background-color: #f8f9fa;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .form-control {
+        padding: 0.375rem 0.75rem;
+    }
+    textarea.form-control {
+        min-height: 60px;
+    }
+    .card {
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+        padding: 1rem;
+    }
+    .card-body {
+        padding: 1.5rem;
+    }
+    .section-title {
+        color: #2c3e50;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    .profile-info {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .profile-info h5 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+    .profile-info p {
+        margin-bottom: 0.5rem;
+    }
+    .dates-section {
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #dee2e6;
+    }
+    .gaf-section {
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .gaf-table {
+        margin-bottom: 0;
+    }
+    .gaf-table th {
+        background-color: #e9ecef;
+    }
+    .gaf-table td {
+        vertical-align: middle;
+    }
+    .gaf-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .gaf-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0;
+    }
+    .gaf-subtitle {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    .weighting-info {
+        background-color: #e9ecef;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin-top: 1rem;
+    }
+    .btn-section {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+    .gaf-item {
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+    }
+    .gaf-item:hover {
+        border-color: #adb5bd;
+    }
+    .gaf-item.selected {
+        border-color: #0d6efd;
+        background-color: #f8f9fa;
+    }
+    .gaf-item .form-check {
+        margin-bottom: 0.5rem;
+    }
+    .gaf-item .form-check-label {
+        font-weight: 500;
+        color: #2c3e50;
+        cursor: pointer;
+    }
+    .gaf-item .comments-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+    .gaf-item .comments-section textarea {
+        font-size: 0.9rem;
+    }
+    .gaf-item.selected .comments-section {
+        border-top-color: #0d6efd;
+    }
+    .badge {
+        font-size: 0.875rem;
+        padding: 0.5em 1em;
+    }
+    .date-field-group {
+        margin-bottom: 1.5rem;
+    }
+    .date-field-group .input-group {
+        margin-bottom: 0.25rem;
+    }
+    .date-field-group .form-control {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    .date-field-group .today-btn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+    .timezone-note {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <form method="post" class="form" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Employee and Supervisor Information -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">{% if form.instance.pk %}Edit{% else %}Create{% endif %} Performance Agreement</h4>
+            </div>
+            <div class="card-body">
+                <div class="profile-info">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Employee Information</h5>
+                            <p><strong>Name:</strong> {{ user_profile.get_full_name }}</p>
+                            <p><strong>Employee ID:</strong> {{ user_profile.employee_id }}</p>
+                            <p><strong>Department:</strong> {{ user_profile.department }}</p>
+                            <p><strong>Job Title:</strong> {{ user_profile.job_title }}</p>
+                            {% if user_profile.salary_level %}
+                            <p class="small text-muted mb-0"><strong>Salary Level:</strong> {{ user_profile.salary_level }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Supervisor Information</h5>
+                            <p><strong>Name:</strong> {{ user_profile.manager.get_full_name }}</p>
+                            <p><strong>Employee ID:</strong> {{ user_profile.manager.employee_id }}</p>
+                            <p><strong>Department:</strong> {{ user_profile.manager.department }}</p>
+                            <p><strong>Job Title:</strong> {{ user_profile.manager.job_title }}</p>
+                            {% if user_profile.manager.salary_level %}
+                            <p class="small text-muted mb-0"><strong>Salary Level:</strong> {{ user_profile.manager.salary_level }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agreement Dates -->
+                <div class="dates-section">
+                    <h5 class="section-title">Agreement Dates</h5>
+                    
+                    <div class="date-field-group">
+                        <label for="id_plan_start_date">Plan Start Date:</label>
+                        <div class="input-group">
+                            {{ form.plan_start_date }}
+                            <button type="button" class="btn btn-outline-secondary today-btn" data-target="id_plan_start_date">Today</button>
+                        </div>
+                        <div class="timezone-note">Note: You are 2 hours ahead of server time.</div>
+                    </div>
+
+                    <div class="date-field-group">
+                        <label for="id_plan_end_date">Plan End Date:</label>
+                        <div class="input-group">
+                            {{ form.plan_end_date }}
+                            <button type="button" class="btn btn-outline-secondary calc-btn" data-target="id_plan_end_date" data-days="364">1 Year</button>
+                        </div>
+                        <div class="timezone-note">Automatically calculated as 364 days from start date</div>
+                    </div>
+
+                    <div class="date-field-group">
+                        <label for="id_midyear_review_date">Midyear Review Date:</label>
+                        <div class="input-group">
+                            {{ form.midyear_review_date }}
+                            <button type="button" class="btn btn-outline-secondary calc-btn" data-target="id_midyear_review_date" data-days="182">6 Months</button>
+                        </div>
+                        <div class="timezone-note">Automatically calculated as 6 months from start date</div>
+                    </div>
+
+                    <div class="date-field-group">
+                        <label for="id_final_assessment_date">Date:</label>
+                        <div class="input-group">
+                            {{ form.final_assessment_date }}
+                            <button type="button" class="btn btn-outline-secondary calc-btn" data-target="id_final_assessment_date" data-days="365">1 Year</button>
+                        </div>
+                        <div class="timezone-note">Automatically calculated as 365 days from start date</div>
+                    </div>
+                </div>
+
+                <!-- Key Result Areas -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Section A: Key Result Areas (KRAs)</h5>
+                            <button type="button" class="btn btn-sm btn-primary" id="add-kra">
+                                <i class="bi bi-plus-circle"></i> Add KRA
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {{ kra_formset.management_form }}
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Key Responsibility Areas<br>(based on job description)</th>
+                                        <th>Performance<br>Objective/Output</th>
+                                        <th>Weight of<br>Objective<br>(Total: 100%)</th>
+                                        <th>Key Performance<br>Standards</th>
+                                        <th>Target Dates/<br>Timeline</th>
+                                        <th>Resource Requirements</th>
+                                        <th>Evidence<br>(examples)</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="kra-formset">
+                                    {% for kra_form in kra_formset %}
+                                    <tr class="kra-form">
+                                        <td>{{ kra_form.description }}{{ kra_form.description.errors }}</td>
+                                        <td>{{ kra_form.performance_objective }}{{ kra_form.performance_objective.errors }}</td>
+                                        <td>{{ kra_form.weighting }}%{{ kra_form.weighting.errors }}</td>
+                                        <td>{{ kra_form.measurement }}{{ kra_form.measurement.errors }}</td>
+                                        <td>{{ kra_form.target_date }}{{ kra_form.target_date.errors }}</td>
+                                        <td>
+                                            <div class="mb-2">
+                                                <label class="small mb-1">Tools:</label>
+                                                {{ kra_form.tools }}{{ kra_form.tools.errors }}
+                                            </div>
+                                            <div>
+                                                <label class="small mb-1">Barriers:</label>
+                                                {{ kra_form.barriers }}{{ kra_form.barriers.errors }}
+                                            </div>
+                                        </td>
+                                        <td>{{ kra_form.evidence_examples }}{{ kra_form.evidence_examples.errors }}</td>
+                                        <td class="text-center">
+                                            <div class="action-buttons">
+                                                {% if kra_form.instance.pk %}
+                                                {{ kra_form.DELETE }}
+                                                <button type="button" class="btn btn-danger btn-sm action-button delete-kra">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="weighting-info">
+                            <div id="weightingTotal" class="text-end">
+                                Total Weighting: <span id="totalWeight">0</span>%
+                            </div>
+                            <div id="weightingWarning" class="text-danger text-end" style="display: none;">
+                                Warning: Total weighting should be 100%. Current total: <span id="warningWeight">0</span>%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generic Assessment Factors -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Section B: Generic Assessment Factors (GAFs)</h5>
+                            <div>
+                                <span class="badge bg-warning" id="gafCounter">0 of 5 selected</span>
+                                <span class="badge bg-info ms-2">Select exactly 5 factors</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {{ gaf_formset.management_form }}
+                        <div class="row g-3">
+                            {% for gaf_form in gaf_formset %}
+                            <div class="col-md-6">
+                                <div class="gaf-item card h-100 {% if gaf_form.is_applicable.value %}selected{% endif %}">
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            {{ gaf_form.factor }}
+                                            {{ gaf_form.is_applicable }}
+                                            <label class="form-check-label" for="{{ gaf_form.is_applicable.id_for_label }}">
+                                                {{ gaf_form.initial.factor|get_gaf_display }}
+                                            </label>
+                                        </div>
+                                        <div class="comments-section mt-2 {% if not gaf_form.is_applicable.value %}d-none{% endif %}">
+                                            {{ gaf_form.comments }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="btn-section text-end">
+                    <a href="{% url 'performance:performance_agreement_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary ms-2">
+                        <i class="bi bi-save"></i> Save Agreement
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    // KRA functionality
+    const addButton = document.getElementById('add-kra');
+    if (!addButton) return;
+
+    let isEventAttached = false;
+    
+    function calculateTotalWeight() {
+        const weightInputs = document.querySelectorAll('input[name$="-weighting"]');
+        let total = 0;
+        weightInputs.forEach(input => {
+            const weight = parseFloat(input.value) || 0;
+            total += weight;
+        });
+        
+        document.getElementById('totalWeight').textContent = total.toFixed(2);
+        const warningDiv = document.getElementById('weightingWarning');
+        const warningWeight = document.getElementById('warningWeight');
+        
+        if (Math.abs(total - 100) > 0.01) {
+            warningDiv.style.display = 'block';
+            warningWeight.textContent = total.toFixed(2);
+        } else {
+            warningDiv.style.display = 'none';
+        }
+    }
+
+    // Monitor weighting changes
+    document.addEventListener('input', function(e) {
+        if (e.target.name.endsWith('-weighting')) {
+            calculateTotalWeight();
+        }
+    });
+
+    // Handle KRA deletion
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-kra')) {
+            const row = e.target.closest('tr');
+            const deleteCheckbox = row.querySelector('input[type="checkbox"]');
+            if (deleteCheckbox) {
+                deleteCheckbox.checked = true;
+                row.style.display = 'none';
+                calculateTotalWeight();
+            }
+        }
+    });
+
+    // GAF functionality
+    const gafCheckboxes = document.querySelectorAll('input[name$="-is_applicable"]');
+    
+    function updateGAFCounter() {
+        const selectedCount = document.querySelectorAll('input[name$="-is_applicable"]:checked').length;
+        const gafCounter = document.getElementById('gafCounter');
+        gafCounter.textContent = `${selectedCount} of 5 selected`;
+        
+        if (selectedCount < 5) {
+            gafCounter.classList.remove('bg-success', 'bg-danger');
+            gafCounter.classList.add('bg-warning');
+        } else if (selectedCount === 5) {
+            gafCounter.classList.remove('bg-warning', 'bg-danger');
+            gafCounter.classList.add('bg-success');
+        } else {
+            gafCounter.classList.remove('bg-success', 'bg-warning');
+            gafCounter.classList.add('bg-danger');
+        }
+    }
+    
+    function updateGAFState(checkbox) {
+        const selectedCount = document.querySelectorAll('input[name$="-is_applicable"]:checked').length;
+        const gafItem = checkbox.closest('.gaf-item');
+        const commentsSection = gafItem.querySelector('.comments-section');
+        
+        if (checkbox.checked) {
+            if (selectedCount > 5) {
+                checkbox.checked = false;
+                alert('You can only select up to 5 Generic Assessment Factors.');
+                return;
+            }
+            gafItem.classList.add('selected');
+            if (commentsSection) {
+                commentsSection.classList.remove('d-none');
+            }
+        } else {
+            gafItem.classList.remove('selected');
+            if (commentsSection) {
+                commentsSection.classList.add('d-none');
+            }
+        }
+        updateGAFCounter();
+    }
+
+    gafCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateGAFState(this);
+        });
+        // Initialize counter without enforcing selection
+        if (checkbox.checked) {
+            const gafItem = checkbox.closest('.gaf-item');
+            const commentsSection = gafItem.querySelector('.comments-section');
+            gafItem.classList.add('selected');
+            if (commentsSection) {
+                commentsSection.classList.remove('d-none');
+            }
+        }
+    });
+    updateGAFCounter();
+
+    // Form submission validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const selectedCount = document.querySelectorAll('input[name$="-is_applicable"]:checked').length;
+        if (selectedCount !== 5) {
+            e.preventDefault();
+            alert('Please select exactly 5 Generic Assessment Factors before submitting the form.');
+            const gafSection = document.querySelector('.card.mt-4');
+            if (gafSection) {
+                gafSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    });
+
+    // Calculate initial KRA weighting total
+    calculateTotalWeight();
+})();
+
+document.addEventListener('DOMContentLoaded', function() {
+    const startDateInput = document.getElementById('id_plan_start_date');
+    const endDateInput = document.getElementById('id_plan_end_date');
+    const midyearDateInput = document.getElementById('id_midyear_review_date');
+    const finalDateInput = document.getElementById('id_final_assessment_date');
+
+    // Function to get today's date in YYYY-MM-DD format
+    function getTodayDate() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Function to add days to a date
+    function addDays(date, days) {
+        const result = new Date(date);
+        result.setDate(result.getDate() + days);
+        const year = result.getFullYear();
+        const month = String(result.getMonth() + 1).padStart(2, '0');
+        const day = String(result.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Function to calculate and set related dates
+    function calculateDates(startDate) {
+        if (!startDate) return;
+        
+        // Calculate end date (364 days)
+        endDateInput.value = addDays(startDate, 364);
+        
+        // Calculate midyear review date (182 days - approximately 6 months)
+        midyearDateInput.value = addDays(startDate, 182);
+        
+        // Calculate final assessment date (365 days)
+        finalDateInput.value = addDays(startDate, 365);
+    }
+
+    // Add click handlers for "Today" button
+    document.querySelectorAll('.today-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const today = getTodayDate();
+            document.getElementById(targetId).value = today;
+            
+            if (targetId === 'id_plan_start_date') {
+                calculateDates(today);
+            }
+        });
+    });
+
+    // Add click handlers for calculation buttons
+    document.querySelectorAll('.calc-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const startDate = startDateInput.value;
+            if (!startDate) {
+                alert('Please set the Plan Start Date first');
+                return;
+            }
+            const targetId = this.getAttribute('data-target');
+            const days = parseInt(this.getAttribute('data-days'));
+            document.getElementById(targetId).value = addDays(startDate, days);
+        });
+    });
+
+    // Automatically calculate dates when start date changes
+    startDateInput.addEventListener('change', function() {
+        calculateDates(this.value);
+    });
+
+    // If start date is already set on page load, calculate other dates
+    if (startDateInput.value) {
+        calculateDates(startDateInput.value);
+    }
+});
+</script>
+{% endblock %} 

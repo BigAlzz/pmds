@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django_cron',
     'performance',
+    'user_management',
 ]
 
 # Crispy Forms Settings

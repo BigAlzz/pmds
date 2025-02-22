@@ -1,0 +1,145 @@
+{% extends 'performance/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}User Management - Performance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">User Management</h4>
+            <a href="{% url 'user_management:user_create' %}" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i> Create User
+            </a>
+        </div>
+        <div class="card-body">
+            <!-- Role Filter -->
+            <div class="mb-4">
+                <form method="get" class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <label class="col-form-label">Filter by Role:</label>
+                    </div>
+                    <div class="col-auto">
+                        <select name="role" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Roles</option>
+                            {% for role_code, role_name in role_filters %}
+                            <option value="{{ role_code }}" {% if request.GET.role == role_code %}selected{% endif %}>
+                                {{ role_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+
+            {% if users %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Department</th>
+                            <th>Job Title</th>
+                            <th>Manager</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-person-circle text-secondary me-2"></i>
+                                    {{ user.get_full_name }}
+                                    <small class="text-muted ms-2">({{ user.username }})</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ user.role|lower }}">{{ user.get_role_display }}</span>
+                            </td>
+                            <td>{{ user.department }}</td>
+                            <td>{{ user.job_title }}</td>
+                            <td>{{ user.manager.get_full_name|default:"-" }}</td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <form method="post" action="{% url 'user_management:switch_user' user.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-info" title="View as User">
+                                            <i class="bi bi-eye"></i>
+                                            <span class="d-none d-md-inline ms-1">View As</span>
+                                        </button>
+                                    </form>
+                                    <a href="{% url 'user_management:user_update' user.id %}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Edit User">
+                                        <i class="bi bi-pencil"></i>
+                                        <span class="d-none d-md-inline ms-1">Edit</span>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteModal{{ user.id }}"
+                                            title="Delete User">
+                                        <i class="bi bi-trash"></i>
+                                        <span class="d-none d-md-inline ms-1">Delete</span>
+                                    </button>
+                                </div>
+
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal{{ user.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Confirm Delete</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Are you sure you want to delete user <strong>{{ user.get_full_name }}</strong>?</p>
+                                                <p class="text-danger">
+                                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                                    This action cannot be undone.
+                                                </p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{% url 'user_management:user_delete' user.id %}" method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="bi bi-trash"></i> Delete User
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No users found.
+                <a href="{% url 'user_management:user_create' %}" class="alert-link">Create your first user</a>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if request.session.impersonating_user_id %}
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div class="alert alert-warning" role="alert">
+        <i class="bi bi-eye-fill"></i>
+        Viewing as another user
+        <form method="get" action="{% url 'user_management:stop_impersonation' %}" class="d-inline">
+            <button type="submit" class="btn btn-sm btn-warning ms-2">
+                <i class="bi bi-box-arrow-left"></i> Return to Original User
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

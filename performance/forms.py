@@ -125,63 +125,46 @@ GAFFormSet = forms.inlineformset_factory(
 )
 
 class PerformanceAgreementForm(forms.ModelForm):
-    status = forms.ChoiceField(
-        choices=PerformanceAgreement.STATUS_CHOICES,
-        initial=PerformanceAgreement.DRAFT,
-        widget=forms.Select(attrs={
-            'class': 'form-select form-control',
-            'style': 'width: 100%;'
-        })
-    )
-
+    """Form for performance agreements"""
     class Meta:
         model = PerformanceAgreement
         fields = [
+            'employee',
+            'supervisor',
+            'approver',
             'plan_start_date',
             'plan_end_date',
             'midyear_review_date',
             'final_assessment_date',
-            'status'
+            'employee_comments',
+            'supervisor_comments',
+            'approver_comments',
+            'hr_comments',
+            'batch_number'
         ]
         widgets = {
-            'plan_start_date': forms.DateInput(attrs={
-                'type': 'date',
-                'class': 'form-control',
-                'placeholder': 'YYYY-MM-DD'
-            }),
-            'plan_end_date': forms.DateInput(attrs={
-                'type': 'date',
-                'class': 'form-control',
-                'placeholder': 'YYYY-MM-DD'
-            }),
-            'midyear_review_date': forms.DateInput(attrs={
-                'type': 'date',
-                'class': 'form-control',
-                'placeholder': 'YYYY-MM-DD'
-            }),
-            'final_assessment_date': forms.DateInput(attrs={
-                'type': 'date',
-                'class': 'form-control',
-                'placeholder': 'YYYY-MM-DD'
-            }),
+            'plan_start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'plan_end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'midyear_review_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'final_assessment_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'employee_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'supervisor_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'approver_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'hr_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'batch_number': forms.TextInput(attrs={'class': 'form-control'})
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.instance.pk:  # If this is a new instance
-            self.initial['status'] = PerformanceAgreement.DRAFT
-        self.fields['status'].required = True
-        self.fields['status'].label = 'Agreement Status'
-
-    def clean(self):
-        cleaned_data = super().clean()
-        start_date = cleaned_data.get('plan_start_date')
-        end_date = cleaned_data.get('plan_end_date')
-
-        if start_date and end_date and end_date < start_date:
-            raise forms.ValidationError("End date cannot be before start date")
-
-        return cleaned_data
+        self.fields['supervisor'].queryset = CustomUser.objects.filter(role='MANAGER')
+        self.fields['approver'].queryset = CustomUser.objects.filter(role='APPROVER')
+        
+        # Make certain fields required
+        self.fields['employee'].required = True
+        self.fields['supervisor'].required = True
+        self.fields['approver'].required = True
+        self.fields['plan_start_date'].required = True
+        self.fields['plan_end_date'].required = True
 
 class MidYearReviewForm(forms.ModelForm):
     class Meta:

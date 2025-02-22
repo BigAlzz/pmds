@@ -2,7 +2,9 @@
 {% load crispy_forms_tags %}
 {% load performance_tags %}
 
-{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Performance Agreement{% endblock %}
+{% block title %}
+    {% if object %}Edit Performance Agreement{% else %}New Performance Agreement{% endif %}
+{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -159,202 +161,117 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <form method="post" class="form" enctype="multipart/form-data">
-        {% csrf_token %}
-        
-        <!-- Employee and Supervisor Information -->
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">{% if form.instance.pk %}Edit{% else %}Create{% endif %} Performance Agreement</h4>
-            </div>
-            <div class="card-body">
-                <div class="profile-info">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>Employee Information</h5>
-                            <p><strong>Name:</strong> {{ user_profile.get_full_name }}</p>
-                            <p><strong>Employee ID:</strong> {{ user_profile.employee_id }}</p>
-                            <p><strong>Department:</strong> {{ user_profile.department }}</p>
-                            <p><strong>Job Title:</strong> {{ user_profile.job_title }}</p>
-                            {% if user_profile.salary_level %}
-                            <p class="small text-muted mb-0"><strong>Salary Level:</strong> {{ user_profile.salary_level }}</p>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <h5>Supervisor Information</h5>
-                            <p><strong>Name:</strong> {{ user_profile.manager.get_full_name }}</p>
-                            <p><strong>Employee ID:</strong> {{ user_profile.manager.employee_id }}</p>
-                            <p><strong>Department:</strong> {{ user_profile.manager.department }}</p>
-                            <p><strong>Job Title:</strong> {{ user_profile.manager.job_title }}</p>
-                            {% if user_profile.manager.salary_level %}
-                            <p class="small text-muted mb-0"><strong>Salary Level:</strong> {{ user_profile.manager.salary_level }}</p>
-                            {% endif %}
-                        </div>
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">{% if object %}Edit Performance Agreement{% else %}New Performance Agreement{% endif %}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Status Information -->
+                <div class="alert {% if object.status == 'COMPLETED' %}alert-success{% elif object.status == 'REJECTED' or object.status == 'RETURNED_FOR_REVISION' %}alert-danger{% else %}alert-info{% endif %} mb-4">
+                    <strong>Status:</strong> {{ object.get_status_display }}
+                    {% if object.status == 'RETURNED_FOR_REVISION' and object.rejection_reason %}
+                    <div class="mt-2">
+                        <strong>Return Reason:</strong> {{ object.rejection_reason }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Agreement Details -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        {{ form.employee|as_crispy_field }}
+                        {{ form.supervisor|as_crispy_field }}
+                        {{ form.approver|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.plan_start_date|as_crispy_field }}
+                        {{ form.plan_end_date|as_crispy_field }}
+                        {{ form.midyear_review_date|as_crispy_field }}
+                        {{ form.final_assessment_date|as_crispy_field }}
                     </div>
                 </div>
 
-                <!-- Agreement Dates -->
-                <div class="dates-section">
-                    <h5 class="section-title">Agreement Dates</h5>
-                    
-                    <div class="date-field-group">
-                        <label for="id_plan_start_date">Plan Start Date:</label>
-                        <div class="input-group">
-                            {{ form.plan_start_date }}
-                            <button type="button" class="btn btn-outline-secondary today-btn" data-target="id_plan_start_date">Today</button>
-                        </div>
-                        <div class="timezone-note">Note: You are 2 hours ahead of server time.</div>
+                <!-- Comments Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5>Comments</h5>
+                        <hr>
                     </div>
-
-                    <div class="date-field-group">
-                        <label for="id_plan_end_date">Plan End Date:</label>
-                        <div class="input-group">
-                            {{ form.plan_end_date }}
-                            <button type="button" class="btn btn-outline-secondary calc-btn" data-target="id_plan_end_date" data-days="364">1 Year</button>
-                        </div>
-                        <div class="timezone-note">Automatically calculated as 364 days from start date</div>
+                    <div class="col-md-6">
+                        {{ form.employee_comments|as_crispy_field }}
+                        {{ form.supervisor_comments|as_crispy_field }}
                     </div>
-
-                    <div class="date-field-group">
-                        <label for="id_midyear_review_date">Midyear Review Date:</label>
-                        <div class="input-group">
-                            {{ form.midyear_review_date }}
-                            <button type="button" class="btn btn-outline-secondary calc-btn" data-target="id_midyear_review_date" data-days="182">6 Months</button>
-                        </div>
-                        <div class="timezone-note">Automatically calculated as 6 months from start date</div>
-                    </div>
-
-                    <div class="date-field-group">
-                        <label for="id_final_assessment_date">Date:</label>
-                        <div class="input-group">
-                            {{ form.final_assessment_date }}
-                            <button type="button" class="btn btn-outline-secondary calc-btn" data-target="id_final_assessment_date" data-days="365">1 Year</button>
-                        </div>
-                        <div class="timezone-note">Automatically calculated as 365 days from start date</div>
+                    <div class="col-md-6">
+                        {{ form.approver_comments|as_crispy_field }}
+                        {{ form.hr_comments|as_crispy_field }}
                     </div>
                 </div>
 
-                <!-- Key Result Areas -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Section A: Key Result Areas (KRAs)</h5>
-                            <button type="button" class="btn btn-sm btn-primary" id="add-kra">
-                                <i class="bi bi-plus-circle"></i> Add KRA
-                            </button>
-                        </div>
+                <!-- HR Batch Processing -->
+                {% if show_batch_field %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5>HR Processing</h5>
+                        <hr>
                     </div>
-                    <div class="card-body">
-                        {{ kra_formset.management_form }}
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Key Responsibility Areas<br>(based on job description)</th>
-                                        <th>Performance<br>Objective/Output</th>
-                                        <th>Weight of<br>Objective<br>(Total: 100%)</th>
-                                        <th>Key Performance<br>Standards</th>
-                                        <th>Target Dates/<br>Timeline</th>
-                                        <th>Resource Requirements</th>
-                                        <th>Evidence<br>(examples)</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="kra-formset">
-                                    {% for kra_form in kra_formset %}
-                                    <tr class="kra-form">
-                                        <td>{{ kra_form.description }}{{ kra_form.description.errors }}</td>
-                                        <td>{{ kra_form.performance_objective }}{{ kra_form.performance_objective.errors }}</td>
-                                        <td>{{ kra_form.weighting }}%{{ kra_form.weighting.errors }}</td>
-                                        <td>{{ kra_form.measurement }}{{ kra_form.measurement.errors }}</td>
-                                        <td>{{ kra_form.target_date }}{{ kra_form.target_date.errors }}</td>
-                                        <td>
-                                            <div class="mb-2">
-                                                <label class="small mb-1">Tools:</label>
-                                                {{ kra_form.tools }}{{ kra_form.tools.errors }}
-                                            </div>
-                                            <div>
-                                                <label class="small mb-1">Barriers:</label>
-                                                {{ kra_form.barriers }}{{ kra_form.barriers.errors }}
-                                            </div>
-                                        </td>
-                                        <td>{{ kra_form.evidence_examples }}{{ kra_form.evidence_examples.errors }}</td>
-                                        <td class="text-center">
-                                            <div class="action-buttons">
-                                                {% if kra_form.instance.pk %}
-                                                {{ kra_form.DELETE }}
-                                                <button type="button" class="btn btn-danger btn-sm action-button delete-kra">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="weighting-info">
-                            <div id="weightingTotal" class="text-end">
-                                Total Weighting: <span id="totalWeight">0</span>%
-                            </div>
-                            <div id="weightingWarning" class="text-danger text-end" style="display: none;">
-                                Warning: Total weighting should be 100%. Current total: <span id="warningWeight">0</span>%
-                            </div>
-                        </div>
+                    <div class="col-md-6">
+                        {{ form.batch_number|as_crispy_field }}
                     </div>
                 </div>
-
-                <!-- Generic Assessment Factors -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Section B: Generic Assessment Factors (GAFs)</h5>
-                            <div>
-                                <span class="badge bg-warning" id="gafCounter">0 of 5 selected</span>
-                                <span class="badge bg-info ms-2">Select exactly 5 factors</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        {{ gaf_formset.management_form }}
-                        <div class="row g-3">
-                            {% for gaf_form in gaf_formset %}
-                            <div class="col-md-6">
-                                <div class="gaf-item card h-100 {% if gaf_form.is_applicable.value %}selected{% endif %}">
-                                    <div class="card-body">
-                                        <div class="form-check">
-                                            {{ gaf_form.factor }}
-                                            {{ gaf_form.is_applicable }}
-                                            <label class="form-check-label" for="{{ gaf_form.is_applicable.id_for_label }}">
-                                                {{ gaf_form.initial.factor|get_gaf_display }}
-                                            </label>
-                                        </div>
-                                        <div class="comments-section mt-2 {% if not gaf_form.is_applicable.value %}d-none{% endif %}">
-                                            {{ gaf_form.comments }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
+                {% endif %}
 
                 <!-- Action Buttons -->
-                <div class="btn-section text-end">
+                <div class="d-flex justify-content-between">
                     <a href="{% url 'performance:performance_agreement_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-x-circle"></i> Cancel
+                        <i class="bi bi-arrow-left"></i> Back to List
                     </a>
-                    <button type="submit" class="btn btn-primary ms-2">
-                        <i class="bi bi-save"></i> Save Agreement
-                    </button>
+                    <div>
+                        {% if can_approve %}
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#returnModal">
+                                <i class="bi bi-arrow-return-left"></i> Return for Revision
+                            </button>
+                            <button type="submit" name="approve" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Approve
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Save Changes
+                            </button>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
-    </form>
+    </div>
+</div>
+
+<!-- Return for Revision Modal -->
+<div class="modal fade" id="returnModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Return for Revision</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="rejection_reason" class="form-label">Reason for Return</label>
+                        <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="return" class="btn btn-warning">Return for Revision</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

@@ -37,6 +37,7 @@ from .forms import (
     UserProfileForm
 )
 from .notifications import notify_user
+from django.db.models import Q
 
 # Dashboard views
 @login_required
@@ -151,49 +152,103 @@ class PerformanceAgreementUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'performance/performance_agreement_form.html'
     success_url = reverse_lazy('performance:performance_agreement_list')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.request.POST:
-            context['kra_formset'] = KRAFormSet(self.request.POST, instance=self.object)
-            context['gaf_formset'] = GAFFormSet(self.request.POST, instance=self.object)
-        else:
-            context['kra_formset'] = KRAFormSet(instance=self.object)
-            # Initialize GAF formset with existing GAFs or create new ones
-            if self.object.gafs.exists():
-                context['gaf_formset'] = GAFFormSet(instance=self.object)
-            else:
-                context['gaf_formset'] = GAFFormSet(
-                    instance=self.object,
-                    initial=[{'factor': factor[0]} for factor in GenericAssessmentFactor.GAF_CHOICES]
-                )
-        context['user_profile'] = self.request.user
-        return context
-
-    def form_valid(self, form):
-        context = self.get_context_data()
-        kra_formset = context['kra_formset']
-        gaf_formset = context['gaf_formset']
-        
-        if kra_formset.is_valid() and gaf_formset.is_valid():
-            self.object = form.save()
-            kra_formset.instance = self.object
-            kra_formset.save()
-            
-            gaf_formset.instance = self.object
-            gaf_formset.save()
-            
-            messages.success(self.request, 'Performance Agreement updated successfully!')
-            return redirect(self.success_url)
-        else:
-            messages.error(self.request, 'Please correct the errors below.')
-            return self.render_to_response(self.get_context_data(form=form))
-
     def get_queryset(self):
         if self.request.user.role == CustomUser.HR:
             return PerformanceAgreement.objects.all()
+        elif self.request.user.role == CustomUser.APPROVER:
+            return PerformanceAgreement.objects.filter(
+                Q(approver=self.request.user) & 
+                Q(status=PerformanceAgreement.PENDING_APPROVER_REVIEW)
+            )
         elif self.request.user.role == CustomUser.MANAGER:
             return PerformanceAgreement.objects.filter(supervisor=self.request.user)
         return PerformanceAgreement.objects.filter(employee=self.request.user)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if self.request.user.role == CustomUser.HR:
+            # HR can edit all fields
+            pass
+        elif self.request.user.role == CustomUser.APPROVER:
+            # Approver can only edit their comments and status
+            for field in list(form.fields.keys()):
+                if field not in ['approver_comments', 'status']:
+                    form.fields[field].disabled = True
+        elif self.request.user.role == CustomUser.MANAGER:
+            # Manager can edit supervisor comments and some fields
+            for field in list(form.fields.keys()):
+                if field not in ['supervisor_comments', 'status', 'plan_start_date', 'plan_end_date']:
+                    form.fields[field].disabled = True
+        else:
+            # Employee can only edit their comments and submit
+            for field in list(form.fields.keys()):
+                if field not in ['employee_comments']:
+                    form.fields[field].disabled = True
+        return form
+
+    def form_valid(self, form):
+        agreement = form.instance
+        current_status = agreement.status
+        user_role = self.request.user.role
+
+        if user_role == CustomUser.EMPLOYEE:
+            if current_status == PerformanceAgreement.DRAFT:
+                agreement.status = PerformanceAgreement.PENDING_SUPERVISOR_RATING
+                agreement.employee_submitted_date = timezone.now()
+                messages.success(self.request, "Performance Agreement submitted for supervisor review.")
+
+        elif user_role == CustomUser.MANAGER:
+            if current_status == PerformanceAgreement.PENDING_SUPERVISOR_RATING:
+                agreement.status = PerformanceAgreement.PENDING_APPROVER_REVIEW
+                agreement.supervisor_reviewed_date = timezone.now()
+                messages.success(self.request, "Performance Agreement submitted for approver review.")
+
+        elif user_role == CustomUser.APPROVER:
+            if current_status == PerformanceAgreement.PENDING_APPROVER_REVIEW:
+                if 'approve' in self.request.POST:
+                    agreement.status = PerformanceAgreement.PENDING_HR_REVIEW
+                    agreement.approver_reviewed_date = timezone.now()
+                    messages.success(self.request, "Performance Agreement approved and submitted for HR review.")
+                elif 'return' in self.request.POST:
+                    agreement.status = PerformanceAgreement.RETURNED_FOR_REVISION
+                    agreement.rejection_reason = self.request.POST.get('rejection_reason', '')
+                    agreement.rejected_by = self.request.user
+                    agreement.rejected_date = timezone.now()
+                    messages.warning(self.request, "Performance Agreement returned for revision.")
+
+        elif user_role == CustomUser.HR:
+            if current_status == PerformanceAgreement.PENDING_HR_REVIEW:
+                if 'approve' in self.request.POST:
+                    agreement.status = PerformanceAgreement.COMPLETED
+                    agreement.hr_reviewed_date = timezone.now()
+                    # Assign to batch if provided
+                    batch_number = self.request.POST.get('batch_number')
+                    if batch_number:
+                        agreement.batch_number = batch_number
+                    messages.success(self.request, "Performance Agreement approved and completed.")
+                elif 'return' in self.request.POST:
+                    agreement.status = PerformanceAgreement.RETURNED_FOR_REVISION
+                    agreement.rejection_reason = self.request.POST.get('rejection_reason', '')
+                    agreement.rejected_by = self.request.user
+                    agreement.rejected_date = timezone.now()
+                    messages.warning(self.request, "Performance Agreement returned for revision.")
+
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        agreement = self.get_object()
+        context['can_approve'] = (
+            (self.request.user.role == CustomUser.APPROVER and 
+             agreement.status == PerformanceAgreement.PENDING_APPROVER_REVIEW) or
+            (self.request.user.role == CustomUser.HR and 
+             agreement.status == PerformanceAgreement.PENDING_HR_REVIEW)
+        )
+        context['show_batch_field'] = (
+            self.request.user.role == CustomUser.HR and 
+            agreement.status == PerformanceAgreement.PENDING_HR_REVIEW
+        )
+        return context
 
 @login_required
 def performance_agreement_submit(request, pk):

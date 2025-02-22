@@ -1,0 +1,106 @@
+{% extends 'performance/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+{% if form.instance.pk %}Edit{% else %}Create{% endif %} User - Performance Management System
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">{% if form.instance.pk %}Edit{% else %}Create{% endif %} User</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if not form.instance.pk %}
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5>Login Information</h5>
+                                {{ form.username|as_crispy_field }}
+                                {{ form.password1|as_crispy_field }}
+                                {{ form.password2|as_crispy_field }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5>Personal Information</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.first_name|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.last_name|as_crispy_field }}
+                                    </div>
+                                </div>
+                                {{ form.email|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5>Employment Information</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.employee_id|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.persal_number|as_crispy_field }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.role|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.department|as_crispy_field }}
+                                    </div>
+                                </div>
+                                {{ form.job_title|as_crispy_field }}
+                                {{ form.job_purpose|as_crispy_field }}
+                                {{ form.school_directorate|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5>Additional Details</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.date_of_appointment|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.salary_level|as_crispy_field }}
+                                    </div>
+                                </div>
+                                {{ form.manager|as_crispy_field }}
+                                <div class="form-check mb-3">
+                                    {{ form.is_on_probation }}
+                                    <label class="form-check-label" for="{{ form.is_on_probation.id_for_label }}">
+                                        Is on probation
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Save User
+                            </button>
+                            <a href="{% url 'user_management:user_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

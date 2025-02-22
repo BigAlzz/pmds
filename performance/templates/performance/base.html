@@ -98,6 +98,15 @@
                                 Submit Feedback
                             </a>
                         </li>
+                        {% if user.is_superuser or user.role == 'HR' %}
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {% if request.resolver_match.url_name == 'user_list' %}active{% endif %}" 
+                               href="{% url 'user_management:user_list' %}">
+                                <i class="bi bi-people me-2"></i>
+                                User Management
+                            </a>
+                        </li>
+                        {% endif %}
                     </ul>
                 </div>
             </nav>

@@ -48,10 +48,12 @@ class CustomUser(AbstractUser):
     EMPLOYEE = 'EMPLOYEE'
     MANAGER = 'MANAGER'
     HR = 'HR'
+    APPROVER = 'APPROVER'
     ROLE_CHOICES = [
         (EMPLOYEE, 'Employee'),
         (MANAGER, 'Manager'),
         (HR, 'HR'),
+        (APPROVER, 'Approver'),
     ]
     
     employee_id = models.CharField(max_length=20, unique=True, null=True, blank=True)
@@ -65,7 +67,7 @@ class CustomUser(AbstractUser):
     is_on_probation = models.BooleanField(default=False)
     manager = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subordinates')
     manager_persal_number = models.CharField(max_length=20, blank=True)
-    salary_level = models.ForeignKey(SalaryLevel, on_delete=models.SET_NULL, null=True, blank=True)
+    salary_level = models.ForeignKey('SalaryLevel', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.get_full_name()} ({self.persal_number if self.persal_number else self.username})"
@@ -113,22 +115,27 @@ class PerformanceAgreement(models.Model):
     PENDING_EMPLOYEE_RATING = 'PENDING_EMPLOYEE_RATING'
     PENDING_SUPERVISOR_RATING = 'PENDING_SUPERVISOR_RATING'
     PENDING_AGREEMENT = 'PENDING_AGREEMENT'
-    PENDING_ADMIN_APPROVAL = 'PENDING_ADMIN_APPROVAL'
+    PENDING_APPROVER_REVIEW = 'PENDING_APPROVER_REVIEW'
+    PENDING_HR_REVIEW = 'PENDING_HR_REVIEW'
     COMPLETED = 'COMPLETED'
     REJECTED = 'REJECTED'
+    RETURNED_FOR_REVISION = 'RETURNED_FOR_REVISION'
 
     STATUS_CHOICES = [
         (DRAFT, 'Draft'),
         (PENDING_EMPLOYEE_RATING, 'Pending Employee Self-Rating'),
         (PENDING_SUPERVISOR_RATING, 'Pending Supervisor Rating'),
         (PENDING_AGREEMENT, 'Pending Rating Agreement'),
-        (PENDING_ADMIN_APPROVAL, 'Pending PMDS Administrator Approval'),
+        (PENDING_APPROVER_REVIEW, 'Pending Approver Review'),
+        (PENDING_HR_REVIEW, 'Pending HR Review'),
         (COMPLETED, 'Completed'),
         (REJECTED, 'Rejected'),
+        (RETURNED_FOR_REVISION, 'Returned for Revision'),
     ]
 
     employee = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     supervisor = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='supervised_agreements')
+    approver = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_agreements')
     pmds_administrator = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='administered_agreements')
     
     # Agreement Dates
@@ -143,6 +150,10 @@ class PerformanceAgreement(models.Model):
     employee_submitted_date = models.DateTimeField(null=True, blank=True)
     supervisor_reviewed_date = models.DateTimeField(null=True, blank=True)
     agreement_reached_date = models.DateTimeField(null=True, blank=True)
+    approver_reviewed_date = models.DateTimeField(null=True, blank=True)
+    approver_comments = models.TextField(blank=True)
+    hr_reviewed_date = models.DateTimeField(null=True, blank=True)
+    hr_comments = models.TextField(blank=True)
     admin_approved_date = models.DateTimeField(null=True, blank=True)
     
     # Overall Comments
@@ -154,6 +165,9 @@ class PerformanceAgreement(models.Model):
     rejection_reason = models.TextField(blank=True)
     rejected_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='rejected_agreements')
     rejected_date = models.DateTimeField(null=True, blank=True)
+    
+    # Batch Processing for HR
+    batch_number = models.CharField(max_length=50, blank=True, help_text="Batch number for HR processing")
 
     def __str__(self):
         employee_name = self.employee.get_full_name()

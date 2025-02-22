@@ -25,4 +25,6 @@ urlpatterns = [
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     # Include performance app URLs
     path('', include('performance.urls')),
+    # Include user management URLs
+    path('', include('user_management.urls')),
 ]

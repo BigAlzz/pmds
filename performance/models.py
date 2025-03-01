@@ -135,8 +135,10 @@ class PerformanceAgreement(models.Model):
     PENDING_SUPERVISOR_RATING = 'PENDING_SUPERVISOR_RATING'
     PENDING_SUPERVISOR_SIGNOFF = 'PENDING_SUPERVISOR_SIGNOFF'
     PENDING_MANAGER_APPROVAL = 'PENDING_MANAGER_APPROVAL'
+    PENDING_HR_VERIFICATION = 'PENDING_HR_VERIFICATION'
     COMPLETED = 'COMPLETED'
     REJECTED = 'REJECTED'
+    RETURNED_FOR_CORRECTION = 'RETURNED_FOR_CORRECTION'
 
     STATUS_CHOICES = [
         (DRAFT, 'Draft'),
@@ -144,14 +146,17 @@ class PerformanceAgreement(models.Model):
         (PENDING_SUPERVISOR_RATING, 'Pending Supervisor Rating'),
         (PENDING_SUPERVISOR_SIGNOFF, 'Pending Supervisor Sign-off'),
         (PENDING_MANAGER_APPROVAL, 'Pending Manager Approval'),
+        (PENDING_HR_VERIFICATION, 'Pending HR Verification'),
         (COMPLETED, 'Completed'),
         (REJECTED, 'Rejected'),
+        (RETURNED_FOR_CORRECTION, 'Returned for Correction'),
     ]
 
     employee = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     supervisor = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='supervised_agreements')
     approver = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_agreements')
     pmds_administrator = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='administered_agreements')
+    hr_verifier = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='verified_agreements')
     
     # Agreement Dates
     agreement_date = models.DateField(default=timezone.now)
@@ -166,16 +171,22 @@ class PerformanceAgreement(models.Model):
     supervisor_reviewed_date = models.DateTimeField(null=True, blank=True)
     supervisor_signoff_date = models.DateTimeField(null=True, blank=True)
     manager_approval_date = models.DateTimeField(null=True, blank=True)
+    hr_verification_date = models.DateTimeField(null=True, blank=True)
     completion_date = models.DateTimeField(null=True, blank=True)
     
     # Overall Comments
     employee_comments = models.TextField(blank=True)
     supervisor_comments = models.TextField(blank=True)
     manager_comments = models.TextField(blank=True)
+    hr_comments = models.TextField(blank=True)
     
     # Rejection Details
     rejection_reason = models.TextField(blank=True)
     rejection_date = models.DateTimeField(null=True, blank=True)
+    
+    # Return for Correction Details
+    return_reason = models.TextField(blank=True)
+    return_date = models.DateTimeField(null=True, blank=True)
     
     # Batch Processing for HR
     batch_number = models.CharField(max_length=50, blank=True, help_text="Batch number for HR processing")
@@ -732,3 +743,78 @@ class GAFFinalRating(models.Model):
         if self.employee_evidence_file:
             return os.path.basename(self.employee_evidence_file.name)
         return None
+
+class AuditTrail(models.Model):
+    """Model for tracking changes to performance agreements and user activities"""
+    ACTION_CREATE = 'CREATE'
+    ACTION_UPDATE = 'UPDATE'
+    ACTION_DELETE = 'DELETE'
+    ACTION_SUBMIT = 'SUBMIT'
+    ACTION_APPROVE = 'APPROVE'
+    ACTION_REJECT = 'REJECT'
+    ACTION_VERIFY = 'VERIFY'
+    ACTION_LOGIN = 'LOGIN'
+    ACTION_LOGOUT = 'LOGOUT'
+    
+    ACTION_CHOICES = [
+        (ACTION_CREATE, 'Create'),
+        (ACTION_UPDATE, 'Update'),
+        (ACTION_DELETE, 'Delete'),
+        (ACTION_SUBMIT, 'Submit'),
+        (ACTION_APPROVE, 'Approve'),
+        (ACTION_REJECT, 'Reject'),
+        (ACTION_VERIFY, 'Verify'),
+        (ACTION_LOGIN, 'Login'),
+        (ACTION_LOGOUT, 'Logout'),
+    ]
+    
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='audit_trails')
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    
+    # Related object information
+    content_type = models.CharField(max_length=50, blank=True, help_text="Type of object affected (e.g., PerformanceAgreement)")
+    object_id = models.PositiveIntegerField(null=True, blank=True, help_text="ID of the affected object")
+    object_repr = models.CharField(max_length=200, blank=True, help_text="String representation of the affected object")
+    
+    # Additional details
+    details = models.TextField(blank=True, help_text="Additional details about the action")
+    
+    class Meta:
+        ordering = ['-timestamp']
+        
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.get_action_display()} - {self.timestamp}"
+
+# Add signal handlers to track user login/logout
+@receiver(user_logged_in)
+def user_logged_in_callback(sender, request, user, **kwargs):
+    """Track user login"""
+    if hasattr(request, 'META'):
+        ip_address = request.META.get('REMOTE_ADDR', None)
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        AuditTrail.objects.create(
+            user=user,
+            action=AuditTrail.ACTION_LOGIN,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            details=f"User logged in from {ip_address}"
+        )
+
+@receiver(user_logged_out)
+def user_logged_out_callback(sender, request, user, **kwargs):
+    """Track user logout"""
+    if user and hasattr(request, 'META'):
+        ip_address = request.META.get('REMOTE_ADDR', None)
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        AuditTrail.objects.create(
+            user=user,
+            action=AuditTrail.ACTION_LOGOUT,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            details=f"User logged out from {ip_address}"
+        )

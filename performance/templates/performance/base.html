@@ -119,6 +119,13 @@
                                 User Management
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {% if request.resolver_match.url_name == 'audit_trail_list' %}active{% endif %}" 
+                               href="{% url 'performance:audit_trail_list' %}">
+                                <i class="bi bi-clock-history me-2"></i>
+                                Audit Trail
+                            </a>
+                        </li>
                         {% endif %}
                     </ul>
                 </div>

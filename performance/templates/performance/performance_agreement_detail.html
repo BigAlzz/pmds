@@ -122,6 +122,19 @@
                         </button>
                         {% endif %}
 
+                        {% if user.role == 'HR' and agreement.status == 'PENDING_HR_VERIFICATION' %}
+                        <form method="post" action="{% url 'performance:performance_agreement_hr_verify' agreement.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="submit_action" value="hr_verify">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Verify Agreement
+                            </button>
+                        </form>
+                        <a href="{% url 'return_performance_agreement' agreement.pk %}" class="btn btn-warning">
+                            <i class="bi bi-arrow-return-left"></i> Return for Correction
+                        </a>
+                        {% endif %}
+
                         <a href="{% url 'performance:export_agreement_pdf' agreement.pk %}" class="btn btn-outline-info" target="_blank">
                             <i class="bi bi-file-pdf"></i> Export PDF
                         </a>
@@ -164,11 +177,20 @@
                                 </div>
                                 
                                 <!-- Manager Approval -->
-                                <div class="workflow-step {% if agreement.status == 'COMPLETED' %}completed{% elif agreement.status == 'PENDING_MANAGER_APPROVAL' %}active{% endif %}">
+                                <div class="workflow-step {% if agreement.status == 'COMPLETED' or agreement.status == 'PENDING_HR_VERIFICATION' %}completed{% elif agreement.status == 'PENDING_MANAGER_APPROVAL' %}active{% endif %}">
                                     <h6>Manager Approval</h6>
                                     <p class="mb-0">Manager approves the agreement</p>
                                     {% if agreement.manager_approval_date %}
                                     <p class="workflow-step-date">Approved on {{ agreement.manager_approval_date|date:"F d, Y" }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- HR Verification -->
+                                <div class="workflow-step {% if agreement.status == 'COMPLETED' %}completed{% elif agreement.status == 'PENDING_HR_VERIFICATION' %}active{% endif %}">
+                                    <h6>HR Verification</h6>
+                                    <p class="mb-0">HR verifies the agreement</p>
+                                    {% if agreement.hr_verification_date %}
+                                    <p class="workflow-step-date">Verified on {{ agreement.hr_verification_date|date:"F d, Y" }} by {{ agreement.hr_verifier.get_full_name }}</p>
                                     {% endif %}
                                 </div>
                                 
@@ -283,6 +305,29 @@
                                             <th>Final Assessment:</th>
                                             <td>{{ agreement.final_assessment_date|date:"F d, Y" }}</td>
                                         </tr>
+                                        {% if agreement.return_reason %}
+                                        <tr>
+                                            <th>Return Reason:</th>
+                                            <td>
+                                                <div class="alert alert-warning mb-0">
+                                                    {{ agreement.return_reason }}
+                                                    <div class="small text-muted mt-1">
+                                                        Returned on {{ agreement.return_date|date:"F d, Y" }}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if agreement.hr_comments %}
+                                        <tr>
+                                            <th>HR Comments:</th>
+                                            <td>
+                                                <div class="alert alert-info mb-0">
+                                                    {{ agreement.hr_comments }}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
                                     </table>
                                 </div>
                             </div>

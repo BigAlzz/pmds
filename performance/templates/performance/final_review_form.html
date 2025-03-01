@@ -168,52 +168,30 @@
                         <div class="rating-section">
                             <div class="rating-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Key Responsibility Areas (KRAs)</h5>
-                                <span class="badge bg-primary">{{ kra_formset.forms|length }} KRAs</span>
+                                <span class="badge bg-primary">{{ kras|length }} KRAs</span>
                             </div>
                             {{ kra_formset.management_form }}
                             
                             <div class="kra-accordion">
-                                {% for form in kra_formset %}
+                                {% for kra in kras %}
+                                    {% with form=kra_formset.forms|get_item:forloop.counter0 %}
                                     {{ form.id }}
-                                    {{ form.kra }}
+                                    <input type="hidden" name="{{ form.kra.html_name }}" value="{{ kra.id }}">
                                     <div class="accordion-item" id="kra-item-{{ forloop.counter }}">
                                         <div class="accordion-header" onclick="toggleAccordion('kra-item-{{ forloop.counter }}')">
                                             <div>
-                                                {% if form.instance.pk %}
-                                                    {% with kra=form.instance.kra %}
-                                                        <h6 class="accordion-title">KRA {{ forloop.counter }}: {{ kra.description|truncatechars:100 }}</h6>
-                                                        <p class="accordion-subtitle">Weight: {{ kra.weighting }}% | Target: {{ kra.target_date|date:"M d, Y" }}</p>
-                                                    {% endwith %}
-                                                {% else %}
-                                                    {% with kra=performance_agreement.kras.all|get_item:forloop.counter0 %}
-                                                        <h6 class="accordion-title">KRA {{ forloop.counter }}: {{ kra.description|truncatechars:100 }}</h6>
-                                                        <p class="accordion-subtitle">Weight: {{ kra.weighting }}% | Target: {{ kra.target_date|date:"M d, Y" }}</p>
-                                                    {% endwith %}
-                                                {% endif %}
+                                                <h6 class="accordion-title">KRA {{ forloop.counter }}: {{ kra.description|truncatechars:100 }}</h6>
+                                                <p class="accordion-subtitle">Weight: {{ kra.weighting }}% | Target: {{ kra.target_date|date:"M d, Y" }}</p>
                                             </div>
                                             <i class="bi bi-chevron-down toggle-icon"></i>
                                         </div>
                                         <div class="accordion-content">
                                             <div class="kra-details mb-3">
-                                                {% if form.instance.pk %}
-                                                    <!-- For existing ratings during edit -->
-                                                    {% with kra=form.instance.kra %}
-                                                        <p><span class="label">Description:</span> {{ kra.description }}</p>
-                                                        <p><span class="label">Objective:</span> {{ kra.performance_objective }}</p>
-                                                        <p><span class="label">Weight:</span> {{ kra.weighting }}%</p>
-                                                        <p><span class="label">Measurement:</span> {{ kra.measurement }}</p>
-                                                        <p><span class="label">Target Date:</span> {{ kra.target_date|date:"M d, Y" }}</p>
-                                                    {% endwith %}
-                                                {% else %}
-                                                    <!-- For new ratings during creation -->
-                                                    {% with kra=performance_agreement.kras.all|get_item:forloop.counter0 %}
-                                                        <p><span class="label">Description:</span> {{ kra.description }}</p>
-                                                        <p><span class="label">Objective:</span> {{ kra.performance_objective }}</p>
-                                                        <p><span class="label">Weight:</span> {{ kra.weighting }}%</p>
-                                                        <p><span class="label">Measurement:</span> {{ kra.measurement }}</p>
-                                                        <p><span class="label">Target Date:</span> {{ kra.target_date|date:"M d, Y" }}</p>
-                                                    {% endwith %}
-                                                {% endif %}
+                                                <p><span class="label">Description:</span> {{ kra.description }}</p>
+                                                <p><span class="label">Objective:</span> {{ kra.performance_objective }}</p>
+                                                <p><span class="label">Weight:</span> {{ kra.weighting }}%</p>
+                                                <p><span class="label">Measurement:</span> {{ kra.measurement }}</p>
+                                                <p><span class="label">Target Date:</span> {{ kra.target_date|date:"M d, Y" }}</p>
                                             </div>
                                             <hr>
                                             <div class="row">
@@ -253,13 +231,13 @@
                                                         <div class="form-group mb-3">
                                                             <label for="improvement-description-{{ forloop.counter }}">Improvement Description:</label>
                                                             <textarea id="improvement-description-{{ forloop.counter }}" class="form-control" rows="3" 
-                                                                      placeholder="Describe the specific improvements needed for this KRA"></textarea>
+                                                                    placeholder="Describe the specific improvements needed for this KRA"></textarea>
                                                         </div>
                                                         <button type="button" 
                                                                 class="add-to-plan-btn btn btn-warning" 
                                                                 data-source-type="FYR"
                                                                 data-source-id="{% if form.instance.final_review %}{{ form.instance.final_review.id }}{% else %}0{% endif %}"
-                                                                data-kra-id="{% if form.instance.kra %}{{ form.instance.kra.id }}{% else %}0{% endif %}"
+                                                                data-kra-id="{{ kra.id }}"
                                                                 data-index="{{ forloop.counter }}">
                                                             <i class="bi bi-plus-circle"></i> Add to Improvement Plan
                                                         </button>
@@ -285,6 +263,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% endwith %}
                                 {% endfor %}
                             </div>
                         </div>
@@ -293,40 +272,27 @@
                         <div class="rating-section">
                             <div class="rating-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Generic Assessment Factors (GAFs)</h5>
-                                <span class="badge bg-primary">{{ gaf_formset.forms|length }} GAFs</span>
+                                <span class="badge bg-primary">{{ gafs|length }} GAFs</span>
                             </div>
                             {{ gaf_formset.management_form }}
                             
                             <div class="gaf-accordion">
-                                {% for form in gaf_formset %}
+                                {% for gaf in gafs %}
+                                    {% with form=gaf_formset.forms|get_item:forloop.counter0 %}
                                     {{ form.id }}
-                                    {{ form.gaf }}
+                                    <input type="hidden" name="{{ form.gaf.html_name }}" value="{{ gaf.id }}">
                                     <div class="accordion-item" id="gaf-item-{{ forloop.counter }}">
                                         <div class="accordion-header" onclick="toggleAccordion('gaf-item-{{ forloop.counter }}')">
                                             <div>
-                                                {% if form.instance.pk %}
-                                                    <h6 class="accordion-title">GAF {{ forloop.counter }}: {{ form.instance.gaf.get_factor_display }}</h6>
-                                                    <p class="accordion-subtitle">{{ form.instance.gaf.comments|truncatechars:100 }}</p>
-                                                {% else %}
-                                                    {% with gaf=performance_agreement.gafs.all|get_item:forloop.counter0 %}
-                                                        <h6 class="accordion-title">GAF {{ forloop.counter }}: {{ gaf.get_factor_display }}</h6>
-                                                        <p class="accordion-subtitle">{{ gaf.comments|truncatechars:100 }}</p>
-                                                    {% endwith %}
-                                                {% endif %}
+                                                <h6 class="accordion-title">GAF {{ forloop.counter }}: {{ gaf.get_factor_display }}</h6>
+                                                <p class="accordion-subtitle">{{ gaf.comments|truncatechars:100 }}</p>
                                             </div>
                                             <i class="bi bi-chevron-down toggle-icon"></i>
                                         </div>
                                         <div class="accordion-content">
                                             <div class="gaf-details mb-3">
-                                                {% if form.instance.pk %}
-                                                    <p><span class="label">Factor:</span> {{ form.instance.gaf.get_factor_display }}</p>
-                                                    <p><span class="label">Comments:</span> {{ form.instance.gaf.comments }}</p>
-                                                {% else %}
-                                                    {% with gaf=performance_agreement.gafs.all|get_item:forloop.counter0 %}
-                                                        <p><span class="label">Factor:</span> {{ gaf.get_factor_display }}</p>
-                                                        <p><span class="label">Comments:</span> {{ gaf.comments }}</p>
-                                                    {% endwith %}
-                                                {% endif %}
+                                                <p><span class="label">Factor:</span> {{ gaf.get_factor_display }}</p>
+                                                <p><span class="label">Comments:</span> {{ gaf.comments }}</p>
                                             </div>
                                             <hr>
                                             <div class="row">
@@ -366,13 +332,13 @@
                                                         <div class="form-group mb-3">
                                                             <label for="improvement-description-{{ forloop.counter }}">Improvement Description:</label>
                                                             <textarea id="improvement-description-{{ forloop.counter }}" class="form-control" rows="3" 
-                                                                      placeholder="Describe the specific improvements needed for this GAF"></textarea>
+                                                                    placeholder="Describe the specific improvements needed for this GAF"></textarea>
                                                         </div>
                                                         <button type="button" 
                                                                 class="add-to-plan-btn btn btn-warning" 
                                                                 data-source-type="FYR"
                                                                 data-source-id="{% if form.instance.final_review %}{{ form.instance.final_review.id }}{% else %}0{% endif %}"
-                                                                data-gaf-id="{% if form.instance.gaf %}{{ form.instance.gaf.id }}{% else %}0{% endif %}"
+                                                                data-gaf-id="{{ gaf.id }}"
                                                                 data-index="{{ forloop.counter }}">
                                                             <i class="bi bi-plus-circle"></i> Add to Improvement Plan
                                                         </button>
@@ -382,6 +348,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% endwith %}
                                 {% endfor %}
                             </div>
                         </div>

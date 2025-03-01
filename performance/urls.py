@@ -1,6 +1,9 @@
 from django.urls import path
 from . import views
 
+# Import audit views
+from .views import audit_views
+
 app_name = 'performance'
 
 urlpatterns = [
@@ -20,6 +23,8 @@ urlpatterns = [
     path('agreements/<int:pk>/reject/', views.performance_agreement_reject, name='performance_agreement_reject'),
     path('agreements/<int:pk>/pdf/', views.export_agreement_pdf, name='export_agreement_pdf'),
     path('agreements/<int:pk>/delete/', views.performance_agreement_delete, name='performance_agreement_delete'),
+    path('agreements/<int:pk>/hr-verify/', views.performance_agreement_hr_verify, name='performance_agreement_hr_verify'),
+    path('agreements/<int:pk>/return/', views.return_performance_agreement, name='return_performance_agreement'),
 
     # Mid-Year Reviews
     path('reviews/', views.MidYearReviewListView.as_view(), name='midyear_review_list'),
@@ -40,8 +45,10 @@ urlpatterns = [
     path('improvement-plans/create/', views.ImprovementPlanCreateView.as_view(), name='improvement_plan_create'),
     path('improvement-plans/<int:pk>/', views.ImprovementPlanDetailView.as_view(), name='improvement_plan_detail'),
     path('improvement-plans/<int:pk>/edit/', views.ImprovementPlanUpdateView.as_view(), name='improvement_plan_update'),
+    path('improvement-plans/<int:pk>/delete/', views.improvement_plan_delete, name='improvement_plan_delete'),
     path('improvement-plans/<int:plan_id>/add-item/', views.ImprovementPlanItemCreateView.as_view(), name='improvement_plan_item_create'),
     path('improvement-plan-items/<int:pk>/edit/', views.ImprovementPlanItemUpdateView.as_view(), name='improvement_plan_item_update'),
+    path('improvement-plan-items/<int:pk>/delete/', views.improvement_plan_item_delete, name='improvement_plan_item_delete'),
 
     # Personal Development Plans
     path('development-plans/', views.PersonalDevelopmentPlanListView.as_view(), name='development_plan_list'),
@@ -68,4 +75,8 @@ urlpatterns = [
 
     # Improvement Plan
     path('improvement-plan/add-item/', views.add_to_improvement_plan, name='add_to_improvement_plan'),
+
+    # Audit Trail URLs
+    path('audit-trail/', audit_views.audit_trail_list, name='audit_trail_list'),
+    path('audit-trail/<int:pk>/', audit_views.audit_trail_detail, name='audit_trail_detail'),
 ]

@@ -12,7 +12,8 @@ from .models import (
     GAFMidYearRating,
     KRAFinalRating,
     GAFFinalRating,
-    ImprovementPlanItem
+    ImprovementPlanItem,
+    Feedback
 )
 
 class UserProfileForm(forms.ModelForm):
@@ -195,6 +196,15 @@ class KRAMidYearRatingForm(forms.ModelForm):
             'agreed_rating': forms.Select(attrs={'class': 'form-select'})
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # If we have an instance with a midyear_review that has a performance_agreement,
+        # filter the KRA queryset to only include KRAs from that performance agreement
+        if self.instance and hasattr(self.instance, 'midyear_review') and self.instance.midyear_review and self.instance.midyear_review.performance_agreement:
+            self.fields['kra'].queryset = KeyResponsibilityArea.objects.filter(
+                performance_agreement=self.instance.midyear_review.performance_agreement
+            )
+
 class GAFMidYearRatingForm(forms.ModelForm):
     gaf = forms.ModelChoiceField(queryset=GenericAssessmentFactor.objects.all(), widget=forms.HiddenInput())
 
@@ -217,12 +227,22 @@ class GAFMidYearRatingForm(forms.ModelForm):
             'supervisor_rating': forms.Select(attrs={'class': 'form-select'}),
             'supervisor_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
         }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # If we have an instance with a midyear_review that has a performance_agreement,
+        # filter the GAF queryset to only include GAFs from that performance agreement
+        if self.instance and hasattr(self.instance, 'midyear_review') and self.instance.midyear_review and self.instance.midyear_review.performance_agreement:
+            self.fields['gaf'].queryset = GenericAssessmentFactor.objects.filter(
+                performance_agreement=self.instance.midyear_review.performance_agreement,
+                is_applicable=True
+            )
 
 KRAMidYearRatingFormSet = forms.inlineformset_factory(
     MidYearReview,
     KRAMidYearRating,
     form=KRAMidYearRatingForm,
-    extra=0,
+    extra=5,  # Provide 5 empty forms by default
     can_delete=False
 )
 
@@ -230,7 +250,7 @@ GAFMidYearRatingFormSet = forms.inlineformset_factory(
     MidYearReview,
     GAFMidYearRating,
     form=GAFMidYearRatingForm,
-    extra=0,
+    extra=5,  # Provide 5 empty forms by default
     can_delete=False
 )
 
@@ -363,6 +383,7 @@ class KRAFinalRatingForm(forms.ModelForm):
             'agreed_rating'
         ]
         widgets = {
+            'kra': forms.HiddenInput(),
             'employee_rating': forms.Select(attrs={'class': 'form-select'}),
             'employee_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'employee_evidence': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
@@ -385,6 +406,7 @@ class GAFFinalRatingForm(forms.ModelForm):
             'supervisor_comments'
         ]
         widgets = {
+            'gaf': forms.HiddenInput(),
             'employee_rating': forms.Select(attrs={'class': 'form-select'}),
             'employee_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'employee_evidence': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
@@ -397,7 +419,7 @@ KRAFinalRatingFormSet = forms.inlineformset_factory(
     FinalReview,
     KRAFinalRating,
     form=KRAFinalRatingForm,
-    extra=0,
+    extra=20,
     can_delete=False
 )
 
@@ -405,7 +427,8 @@ GAFFinalRatingFormSet = forms.inlineformset_factory(
     FinalReview,
     GAFFinalRating,
     form=GAFFinalRatingForm,
-    extra=0,
+    extra=15,
+    max_num=15,
     can_delete=False
 )
 
@@ -442,3 +465,31 @@ class FinalReviewForm(forms.ModelForm):
                 pass
             else:
                 self.fields['performance_agreement'].queryset = PerformanceAgreement.objects.none() 
+
+class FeedbackForm(forms.ModelForm):
+    """Form for submitting feedback"""
+    class Meta:
+        model = Feedback
+        fields = ['employee', 'feedback', 'anonymous']
+        widgets = {
+            'employee': forms.Select(attrs={'class': 'form-control'}),
+            'feedback': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Enter your feedback here...'}),
+            'anonymous': forms.CheckboxInput(attrs={'class': 'form-check-input'})
+        }
+        
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            # If the user is a manager, they can provide feedback to their subordinates
+            if user.role == 'MANAGER':
+                self.fields['employee'].queryset = CustomUser.objects.filter(manager=user)
+            # If the user is HR, they can provide feedback to anyone
+            elif user.role == 'HR':
+                pass  # Keep the default queryset (all users)
+            # Otherwise, users can only provide feedback to themselves
+            else:
+                self.fields['employee'].queryset = CustomUser.objects.filter(id=user.id)
+                self.fields['employee'].initial = user
+                self.fields['employee'].widget = forms.HiddenInput() 

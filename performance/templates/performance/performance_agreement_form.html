@@ -107,13 +107,23 @@
     .gaf-item {
         transition: all 0.3s ease;
         border: 1px solid #dee2e6;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        background-color: #fff;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
     }
     .gaf-item:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
         border-color: #adb5bd;
     }
     .gaf-item.selected {
-        border-color: #0d6efd;
+        border-color: #4e73df;
         background-color: #f8f9fa;
+        box-shadow: 0 0.25rem 0.75rem rgba(78, 115, 223, 0.2);
     }
     .gaf-item .form-check {
         margin-bottom: 0.5rem;
@@ -122,6 +132,19 @@
         font-weight: 500;
         color: #2c3e50;
         cursor: pointer;
+        display: block;
+        transition: all 0.2s ease;
+    }
+    .gaf-item.selected .form-check-label {
+        font-weight: 600;
+        color: #4e73df;
+    }
+    .gaf-item .form-check-input {
+        margin-right: 0.5rem;
+    }
+    .gaf-item .form-check-input:checked {
+        background-color: #4e73df;
+        border-color: #4e73df;
     }
     .gaf-item .comments-section {
         margin-top: 1rem;
@@ -132,7 +155,7 @@
         font-size: 0.9rem;
     }
     .gaf-item.selected .comments-section {
-        border-top-color: #0d6efd;
+        border-top-color: #4e73df;
     }
     .badge {
         font-size: 0.875rem;
@@ -318,41 +341,9 @@
     }
 
     .weight-total-indicator {
-        position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        background-color: #fff;
-        border: 1px solid #dee2e6;
-        border-radius: 2rem;
-        padding: 0.75rem 1.5rem;
-        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        display: none !important;
     }
 
-    .weight-total-indicator.warning {
-        background-color: #fff3cd;
-        border-color: #ffeeba;
-        color: #856404;
-        animation: pulse 2s infinite;
-    }
-
-    .weight-total-indicator.success {
-        background-color: #d4edda;
-        border-color: #c3e6cb;
-        color: #155724;
-    }
-
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-    }
-    
     /* Weight-based styling */
     .weight-high .weight-badge {
         background-color: #e8f5e9;
@@ -402,6 +393,39 @@
     
     .delete-controls .form-check-input:checked + .form-check-label {
         font-weight: bold;
+    }
+
+    .gaf-factor-name {
+        font-size: 1rem;
+        display: block;
+        width: 100%;
+        margin-top: -3px;
+    }
+
+    .gaf-code {
+        font-size: 0.8rem;
+        color: #4e73df;
+        font-weight: 600;
+    }
+
+    .gaf-item .form-check {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .gaf-item .form-check-input {
+        margin-right: 0;
+        margin-top: 0.25rem;
+        position: absolute;
+    }
+
+    .gaf-item .form-check-label {
+        margin-left: 1.5rem;
+        display: block;
+        width: calc(100% - 1.5rem);
+        cursor: pointer;
     }
 </style>
 {% endblock %}
@@ -609,12 +633,6 @@
                                 </div>
                             </div>
                         </script>
-
-                        <!-- Weight Total Indicator -->
-                        <div class="weight-total-indicator">
-                            <i class="bi bi-calculator"></i>
-                            <span>Total Weight: <strong id="totalWeight">0</strong>%</span>
-                        </div>
                     </div>
                 </div>
 
@@ -629,36 +647,41 @@
                         <div class="alert alert-info mb-4">
                             <i class="bi bi-info-circle"></i> Please select exactly 5 Generic Assessment Factors that are most relevant to your role.
                         </div>
-                        <div class="row row-cols-1 row-cols-md-3 g-3">
+                        <div class="row row-cols-1 row-cols-md-3 g-4">
                             {% for gaf_form in gaf_formset %}
                             <div class="col">
-                                <div class="gaf-item border rounded p-2">
-                                    <div class="form-check">
+                                <div class="gaf-item border rounded {% if gaf_form.is_applicable.value %}selected{% endif %}">
+                                    <div class="form-check d-flex align-items-start">
                                         {{ gaf_form.is_applicable }}
-                                        <label class="form-check-label fw-medium" for="{{ gaf_form.is_applicable.id_for_label }}">
+                                        <label class="form-check-label" for="{{ gaf_form.is_applicable.id_for_label }}">
                                             {% with factor_code=gaf_form.initial.factor %}
-                                                {% if factor_code == 'GAF1' %}Job knowledge
-                                                {% elif factor_code == 'GAF2' %}Technical skills
-                                                {% elif factor_code == 'GAF3' %}Acceptance of responsibility
-                                                {% elif factor_code == 'GAF4' %}Quality of work
-                                                {% elif factor_code == 'GAF5' %}Reliability
-                                                {% elif factor_code == 'GAF6' %}Initiative
-                                                {% elif factor_code == 'GAF7' %}Communication
-                                                {% elif factor_code == 'GAF8' %}Interpersonal relationships
-                                                {% elif factor_code == 'GAF9' %}Flexibility
-                                                {% elif factor_code == 'GAF10' %}Team work
-                                                {% elif factor_code == 'GAF11' %}Planning and execution
-                                                {% elif factor_code == 'GAF12' %}Leadership
-                                                {% elif factor_code == 'GAF13' %}Delegation and empowerment
-                                                {% elif factor_code == 'GAF14' %}Management of financial resources
-                                                {% elif factor_code == 'GAF15' %}Management of human resources
-                                                {% endif %}
+                                                <div class="gaf-factor-name">
+                                                    <div class="gaf-code mb-1">{{ factor_code }}</div>
+                                                    <strong class="d-block mb-2">
+                                                    {% if factor_code == 'GAF1' %}Job knowledge
+                                                    {% elif factor_code == 'GAF2' %}Technical skills
+                                                    {% elif factor_code == 'GAF3' %}Acceptance of responsibility
+                                                    {% elif factor_code == 'GAF4' %}Quality of work
+                                                    {% elif factor_code == 'GAF5' %}Reliability
+                                                    {% elif factor_code == 'GAF6' %}Initiative
+                                                    {% elif factor_code == 'GAF7' %}Communication
+                                                    {% elif factor_code == 'GAF8' %}Interpersonal relationships
+                                                    {% elif factor_code == 'GAF9' %}Flexibility
+                                                    {% elif factor_code == 'GAF10' %}Team work
+                                                    {% elif factor_code == 'GAF11' %}Planning and execution
+                                                    {% elif factor_code == 'GAF12' %}Leadership
+                                                    {% elif factor_code == 'GAF13' %}Delegation and empowerment
+                                                    {% elif factor_code == 'GAF14' %}Management of financial resources
+                                                    {% elif factor_code == 'GAF15' %}Management of human resources
+                                                    {% endif %}
+                                                    </strong>
+                                                </div>
                                             {% endwith %}
                                         </label>
                                         {{ gaf_form.factor }}
-                                        <div class="comments-section mt-2" style="display: none;">
-                                            {{ gaf_form.comments|as_crispy_field }}
-                                        </div>
+                                    </div>
+                                    <div class="comments-section mt-2 {% if not gaf_form.is_applicable.value %}d-none{% endif %}">
+                                        {{ gaf_form.comments|as_crispy_field }}
                                     </div>
                                 </div>
                             </div>
@@ -760,26 +783,6 @@
 
     let isEventAttached = false;
     
-    function calculateTotalWeight() {
-        const weightInputs = document.querySelectorAll('input[name$="-weighting"]');
-        let total = 0;
-        weightInputs.forEach(input => {
-            const weight = parseFloat(input.value) || 0;
-            total += weight;
-        });
-        
-        document.getElementById('totalWeight').textContent = total.toFixed(2);
-        const warningDiv = document.getElementById('weightingWarning');
-        const warningWeight = document.getElementById('warningWeight');
-        
-        if (Math.abs(total - 100) > 0.01) {
-            warningDiv.style.display = 'block';
-            warningWeight.textContent = total.toFixed(2);
-        } else {
-            warningDiv.style.display = 'none';
-        }
-    }
-
     // Add new KRA row functionality
     function updateFormIndex(element, index) {
         ['id', 'name'].forEach(attr => {
@@ -1054,50 +1057,6 @@ function toggleKRA(header) {
     }
 }
 
-function addKRARow() {
-    const formsetContainer = document.getElementById('kra-formset');
-    const totalForms = document.getElementById('id_kras-TOTAL_FORMS');
-    const currentIndex = parseInt(totalForms.value);
-    
-    const emptyFormHtml = document.getElementById('empty-form-template')?.innerHTML || '';
-    if (emptyFormHtml) {
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = emptyFormHtml.replace(/__prefix__/g, currentIndex);
-        
-        const newKRA = tempDiv.firstElementChild;
-        formsetContainer.appendChild(newKRA);
-        
-        // Update form count
-        totalForms.value = currentIndex + 1;
-        
-        // Initialize new form fields
-        newKRA.querySelectorAll('input, textarea').forEach(input => {
-            if (input.type === 'text' || input.type === 'number' || input.tagName === 'TEXTAREA') {
-                input.value = '';
-            }
-        });
-        
-        // Add animation class
-        newKRA.classList.add('newly-added');
-        setTimeout(() => {
-            newKRA.classList.remove('newly-added');
-        }, 1000);
-        
-        // Scroll to new KRA with smooth animation
-        newKRA.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        // Auto-focus the first input field
-        const firstInput = newKRA.querySelector('textarea, input[type="text"]');
-        if (firstInput) {
-            setTimeout(() => {
-                firstInput.focus();
-            }, 500);
-        }
-        
-        calculateTotalWeight();
-    }
-}
-
 function calculateTotalWeight() {
     const weightInputs = document.querySelectorAll('input[name$="-weighting"]');
     let total = 0;
@@ -1127,18 +1086,7 @@ function calculateTotalWeight() {
         }
     });
     
-    const totalElement = document.getElementById('totalWeight');
-    const indicator = document.querySelector('.weight-total-indicator');
-    
-    totalElement.textContent = total.toFixed(2);
-    
-    // Update indicator styling
-    indicator.classList.remove('warning', 'success');
-    if (Math.abs(total - 100) > 0.01) {
-        indicator.classList.add('warning');
-    } else {
-        indicator.classList.add('success');
-    }
+    // Weight total indicator deleted, so we remove its operations
 }
 </script>
 {% endblock %} 

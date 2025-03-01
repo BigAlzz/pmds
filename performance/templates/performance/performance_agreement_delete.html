@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Performance Agreement{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Delete Performance Agreement</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>Warning!</strong> You are about to permanently delete this performance agreement. This action cannot be undone.
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Agreement Details</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width: 30%">Employee</th>
+                                <td>{{ agreement.employee.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Period</th>
+                                <td>{{ agreement.period_start_date|date:"M d, Y" }} - {{ agreement.period_end_date|date:"M d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Current Status</th>
+                                <td>
+                                    <span class="badge bg-primary">{{ agreement.get_status_display }}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <form method="post" action="{% url 'performance_agreement_delete' agreement.id %}">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'performance_agreement_detail' agreement.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Confirm Delete
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

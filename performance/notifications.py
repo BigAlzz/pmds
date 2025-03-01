@@ -17,8 +17,15 @@ def notify_user(user, notification_type, title, message, related_object_type=Non
         related_object_id=related_object_id
     )
     
+    # Check if user has notification preferences, create if they don't
+    try:
+        notification_prefs = user.notification_preferences
+    except NotificationPreference.DoesNotExist:
+        # Create default notification preferences for the user
+        notification_prefs = NotificationPreference.objects.create(user=user)
+    
     # Send email if enabled for the user
-    if notification.recipient.notification_preferences.email_notifications:
+    if notification_prefs.email_notifications:
         try:
             send_mail(
                 subject=notification.title,

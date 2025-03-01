@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verify Performance Agreement{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Verify Performance Agreement</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> You are about to verify this performance agreement. This will finalize the agreement and mark it as COMPLETED.
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Agreement Details</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width: 30%">Employee</th>
+                                <td>{{ agreement.employee.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Period</th>
+                                <td>{{ agreement.period_start_date|date:"M d, Y" }} - {{ agreement.period_end_date|date:"M d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Current Status</th>
+                                <td>
+                                    <span class="badge bg-primary">{{ agreement.get_status_display }}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <form method="post" action="{% url 'performance_agreement_hr_verify' agreement.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="submit_action" value="hr_verify">
+                        <div class="mb-3">
+                            <label for="hr_comments" class="form-label">HR Comments (Optional)</label>
+                            <textarea class="form-control" id="hr_comments" name="hr_comments" rows="4"></textarea>
+                            <div class="form-text">Add any comments or notes about this performance agreement.</div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'performance_agreement_detail' agreement.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check-circle"></i> Verify Agreement
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

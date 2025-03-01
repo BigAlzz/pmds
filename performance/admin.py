@@ -25,6 +25,43 @@ class PerformanceAgreementAdmin(admin.ModelAdmin):
     list_display = ('employee', 'agreement_date', 'status')
     list_filter = ('status', 'agreement_date')
     search_fields = ('employee__username', 'employee__first_name', 'employee__last_name')
+    actions = ['delete_selected']
+    
+    def has_delete_permission(self, request, obj=None):
+        # Import here to avoid circular imports
+        from .permissions import can_delete_performance_agreement
+        
+        # Allow the admin UI to show the delete button on the list view
+        if obj is None:
+            return request.user.is_superuser or request.user.role == 'HR'
+        
+        # Check specific object deletion permissions using our permission function
+        return can_delete_performance_agreement(request.user, obj)
+        
+    def delete_selected(self, request, queryset):
+        # Import here to avoid circular imports
+        from .permissions import can_delete_performance_agreement
+        
+        # Filter queryset to only include items the user can delete
+        deletable_ids = [
+            obj.id for obj in queryset 
+            if can_delete_performance_agreement(request.user, obj)
+        ]
+        deletable_queryset = PerformanceAgreement.objects.filter(id__in=deletable_ids)
+        
+        # Get count before deletion
+        count = deletable_queryset.count()
+        if count == 0:
+            self.message_user(request, "No selected performance agreements could be deleted based on your permissions.", level='warning')
+            return
+            
+        # Perform deletion
+        deletable_queryset.delete()
+        
+        # Show success message
+        self.message_user(request, f"Successfully deleted {count} performance agreement(s).")
+    
+    delete_selected.short_description = "Delete selected performance agreements"
 
 @admin.register(MidYearReview)
 class MidYearReviewAdmin(admin.ModelAdmin):

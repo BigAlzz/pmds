@@ -41,6 +41,11 @@
                                     <i class="bi bi-pencil"></i> Edit
                                 </a>
                                 {% endif %}
+                                {% if delete_url %}
+                                <a href="{% url 'performance:'|add:delete_url object.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}

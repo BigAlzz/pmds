@@ -34,7 +34,7 @@ def update_notification_preferences(request):
     prefs.save()
     
     messages.success(request, 'Notification preferences updated successfully.')
-    return redirect('notification_list')
+    return redirect('performance:notification_list')
 
 @login_required
 @require_POST
@@ -43,10 +43,10 @@ def mark_notification_read(request, notification_id):
     try:
         notification = request.user.notifications.get(id=notification_id)
         notification.mark_as_read()
-        return redirect('notification_list')
+        return redirect('performance:notification_list')
     except Notification.DoesNotExist:
         messages.error(request, 'Notification not found.')
-        return redirect('notification_list')
+        return redirect('performance:notification_list')
 
 @login_required
 @require_POST
@@ -54,7 +54,7 @@ def mark_all_notifications_read(request):
     """Mark all notifications as read"""
     request.user.notifications.filter(read_at__isnull=True).update(read_at=timezone.now())
     messages.success(request, 'All notifications marked as read.')
-    return redirect('notification_list')
+    return redirect('performance:notification_list')
 
 @login_required
 def notification_count(request):

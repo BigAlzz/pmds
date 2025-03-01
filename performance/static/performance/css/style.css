@@ -90,6 +90,12 @@ body {
 .bg-in_progress { background-color: var(--primary-color); }
 .bg-completed { background-color: var(--success-color); }
 
+/* Role Badges */
+.bg-employee { background-color: #6c757d; }
+.bg-manager { background-color: #0d6efd; }
+.bg-hr { background-color: #198754; }
+.bg-approver { background-color: #6f42c1; }
+
 /* Status Badge Enhancements */
 .status-badge {
     padding: 0.5rem 0.75rem;

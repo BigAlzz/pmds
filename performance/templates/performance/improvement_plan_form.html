@@ -1,4 +1,4 @@
-{% extends 'performance/generic_form.html' %}
+{% extends 'performance/base.html' %}
 
 {% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Improvement Plan - Performance Management System{% endblock %}
 
@@ -11,50 +11,66 @@
                     <h4 class="mb-0">{% if form.instance.pk %}Edit{% else %}Create{% endif %} Improvement Plan</h4>
                 </div>
                 <div class="card-body">
-                    <form method="post" novalidate>
+                    <form method="post">
                         {% csrf_token %}
                         
+                        {% if form.instance.pk %}
                         <div class="row mb-4">
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <h5>Employee</h5>
-                                {{ form.employee }}
+                                <p>{{ form.instance.employee.get_full_name }}</p>
+                                
+                                <h5>Department</h5>
+                                <p>{{ form.instance.employee.department }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Start Date</h5>
+                                <p>{{ form.instance.start_date|date:"F d, Y" }}</p>
                             </div>
                         </div>
-
-                        <div class="mb-4">
-                            <h5>Area for Development</h5>
-                            {{ form.area_for_development }}
-                            <small class="form-text text-muted">Specify the areas that need improvement based on performance review.</small>
-                        </div>
-
-                        <div class="mb-4">
-                            <h5>Interventions</h5>
-                            {{ form.interventions }}
-                            <small class="form-text text-muted">Detail the specific actions and support to be provided.</small>
-                        </div>
-
-                        <div class="mb-4">
-                            <h5>Timeline</h5>
-                            {{ form.timeline }}
-                            <small class="form-text text-muted">Set clear deadlines for achieving improvement goals.</small>
-                        </div>
-
-                        <div class="mb-4">
-                            <h5>Status</h5>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
                             {{ form.status }}
+                            {% if form.status.errors %}
+                            <div class="text-danger">
+                                {{ form.status.errors }}
+                            </div>
+                            {% endif %}
                         </div>
-
-                        {% if user.role == 'MANAGER' or user.role == 'HR' %}
-                        <div class="mb-4">
-                            <h5>Approval</h5>
-                            {{ form.approved_by }}
-                            {{ form.approval_date }}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date</label>
+                            {{ form.end_date }}
+                            {% if form.end_date.errors %}
+                            <div class="text-danger">
+                                {{ form.end_date.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.overall_comments.id_for_label }}" class="form-label">Overall Comments</label>
+                            {{ form.overall_comments }}
+                            {% if form.overall_comments.errors %}
+                            <div class="text-danger">
+                                {{ form.overall_comments.errors }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Provide any overall comments about this improvement plan.</div>
+                        </div>
+                        
+                        {% if request.user.role == 'HR' or request.user.role == 'MANAGER' %}
+                        <div class="alert alert-info">
+                            <h5>For Manager/HR Only</h5>
+                            <p>After the plan is completed, you can mark it as completed and provide approval details.</p>
                         </div>
                         {% endif %}
-
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        
+                        <div class="d-flex justify-content-between mt-4">
                             <button type="submit" class="btn btn-primary">Save Plan</button>
-                            <a href="{% url 'improvement_plan_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <a href="{% url 'performance:improvement_plan_list' %}" class="btn btn-outline-secondary">Cancel</a>
                         </div>
                     </form>
                 </div>
@@ -66,8 +82,8 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add any specific JavaScript for improvement plan form here
+    $(document).ready(function() {
+        // Add any JavaScript functionality here
     });
 </script>
 {% endblock %} 

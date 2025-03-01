@@ -26,43 +26,35 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media/
-staticfiles/
 
 # Virtual Environment
 Venv/
 venv/
 ENV/
 
-# Environment Variables
-.env
-.env.local
-.env.*.local
-
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
 
-# OS
+# OS specific
 .DS_Store
 Thumbs.db
 
-# Coverage
+# Environment variables
+.env
+.env.local
+
+# Coverage reports
 htmlcov/
+.tox/
 .coverage
 .coverage.*
-coverage.xml
-*.cover
-
-# Unit test / coverage reports
-.tox/
-.pytest_cache/
+.cache
 nosetests.xml
 coverage.xml
 *.cover
-.hypothesis/
 
 # Backup files
 *.bak

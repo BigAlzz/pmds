@@ -6,7 +6,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Notifications</h2>
         <div>
-            <a href="{% url 'notification_preferences' %}" class="btn btn-outline-primary me-2">
+            <a href="{% url 'performance:notification_preferences' %}" class="btn btn-outline-primary me-2">
                 <i class="bi bi-gear"></i> Preferences
             </a>
             <button id="markAllRead" class="btn btn-outline-secondary">
@@ -38,6 +38,20 @@
                                 </h5>
                                 <p class="card-text">{{ notification.message }}</p>
                                 <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                                
+                                {% if notification.related_object_type == 'improvement_plan' %}
+                                <div class="mt-2">
+                                    <a href="{% url 'performance:improvement_plan_detail' notification.related_object_id %}" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-eye"></i> View Improvement Plan
+                                    </a>
+                                </div>
+                                {% elif notification.related_object_type == 'improvement_plan_item' %}
+                                <div class="mt-2">
+                                    <a href="{% url 'performance:improvement_plan_item_update' notification.related_object_id %}" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-eye"></i> View Item
+                                    </a>
+                                </div>
+                                {% endif %}
                             </div>
                             {% if not notification.read_at %}
                                 <button class="btn btn-sm btn-outline-primary mark-read" data-notification-id="{{ notification.id }}">
@@ -63,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.mark-read').forEach(button => {
         button.addEventListener('click', function() {
             const notificationId = this.dataset.notificationId;
-            fetch(`/notifications/mark-read/${notificationId}/`, {
+            fetch(`{% url 'performance:mark_notification_read' 0 %}`.replace('0', notificationId), {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
@@ -83,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Mark all notifications as read
     document.getElementById('markAllRead').addEventListener('click', function() {
-        fetch('/notifications/mark-all-read/', {
+        fetch('{% url 'performance:mark_all_notifications_read' %}', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken'),
@@ -121,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update notification count in navbar
     function updateNotificationCount() {
-        fetch('/notifications/count/')
+        fetch('{% url 'performance:notification_count' %}')
             .then(response => response.json())
             .then(data => {
                 const badge = document.querySelector('#notificationCount');

@@ -30,6 +30,60 @@
         font-size: 0.9rem;
         padding: 0.5em 1em;
     }
+    
+    .workflow-timeline {
+        position: relative;
+        padding-left: 30px;
+        margin-bottom: 20px;
+    }
+    
+    .workflow-timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #dee2e6;
+    }
+    
+    .workflow-step {
+        position: relative;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+    }
+    
+    .workflow-step::before {
+        content: '';
+        position: absolute;
+        left: -30px;
+        top: 5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #fff;
+        border: 2px solid #dee2e6;
+    }
+    
+    .workflow-step.completed::before {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    
+    .workflow-step.active::before {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    
+    .workflow-step.rejected::before {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    
+    .workflow-step-date {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
 </style>
 {% endblock %}
 
@@ -78,6 +132,74 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <!-- Workflow Timeline -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Workflow Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="workflow-timeline">
+                                <!-- Draft -->
+                                <div class="workflow-step {% if agreement.status != 'DRAFT' %}completed{% elif agreement.status == 'DRAFT' %}active{% endif %}">
+                                    <h6>Draft</h6>
+                                    <p class="mb-0">Initial creation of the agreement</p>
+                                </div>
+                                
+                                <!-- Pending Supervisor Approval -->
+                                <div class="workflow-step {% if agreement.status != 'DRAFT' and agreement.status != 'PENDING_SUPERVISOR_APPROVAL' %}completed{% elif agreement.status == 'PENDING_SUPERVISOR_APPROVAL' %}active{% endif %}">
+                                    <h6>Pending Supervisor Approval</h6>
+                                    <p class="mb-0">Submitted for supervisor approval</p>
+                                    {% if agreement.employee_submitted_date %}
+                                    <p class="workflow-step-date">Submitted on {{ agreement.employee_submitted_date|date:"F d, Y" }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Supervisor Sign-off -->
+                                <div class="workflow-step {% if agreement.status != 'DRAFT' and agreement.status != 'PENDING_SUPERVISOR_APPROVAL' and agreement.status != 'PENDING_SUPERVISOR_SIGNOFF' %}completed{% elif agreement.status == 'PENDING_SUPERVISOR_SIGNOFF' %}active{% endif %}">
+                                    <h6>Supervisor Sign-off</h6>
+                                    <p class="mb-0">Supervisor signs off on the agreement</p>
+                                    {% if agreement.supervisor_signoff_date %}
+                                    <p class="workflow-step-date">Signed off on {{ agreement.supervisor_signoff_date|date:"F d, Y" }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Manager Approval -->
+                                <div class="workflow-step {% if agreement.status == 'COMPLETED' %}completed{% elif agreement.status == 'PENDING_MANAGER_APPROVAL' %}active{% endif %}">
+                                    <h6>Manager Approval</h6>
+                                    <p class="mb-0">Manager approves the agreement</p>
+                                    {% if agreement.manager_approval_date %}
+                                    <p class="workflow-step-date">Approved on {{ agreement.manager_approval_date|date:"F d, Y" }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Completed -->
+                                <div class="workflow-step {% if agreement.status == 'COMPLETED' %}completed{% endif %}">
+                                    <h6>Completed</h6>
+                                    <p class="mb-0">Agreement process completed</p>
+                                    {% if agreement.completion_date %}
+                                    <p class="workflow-step-date">Completed on {{ agreement.completion_date|date:"F d, Y" }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Rejected (if applicable) -->
+                                {% if agreement.status == 'REJECTED' %}
+                                <div class="workflow-step rejected">
+                                    <h6>Rejected</h6>
+                                    <p class="mb-0">Agreement was rejected</p>
+                                    {% if agreement.rejection_date %}
+                                    <p class="workflow-step-date">Rejected on {{ agreement.rejection_date|date:"F d, Y" }}</p>
+                                    {% endif %}
+                                    {% if agreement.rejection_reason %}
+                                    <div class="alert alert-danger mt-2">
+                                        <strong>Reason:</strong> {{ agreement.rejection_reason }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Employee and Agreement Information -->
                     <div class="row mb-4">
                         <div class="col-md-4">
@@ -220,20 +342,40 @@
                             <h5 class="mb-0">Section B: Generic Assessment Factors (GAFs)</h5>
                         </div>
                         <div class="card-body">
-                            <div class="row">
-                                {% for gaf in agreement.gafs.all %}
-                                {% if gaf.is_applicable %}
-                                <div class="col-md-6">
-                                    <div class="gaf-card selected">
-                                        <h6 class="mb-2">{{ gaf.get_factor_display }}</h6>
-                                        <div class="comments mt-2">
-                                            <strong>Comments:</strong>
-                                            <p class="mb-0">{{ gaf.comments|default:"No comments provided." }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
-                                {% endfor %}
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Factor</th>
+                                            <th>Applicable</th>
+                                            <th>Comments</th>
+                                            {% if request.user == agreement.supervisor %}
+                                            <th>Actions</th>
+                                            {% endif %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for gaf in agreement.gafs.all %}
+                                        {% if gaf.is_applicable %}
+                                        <tr>
+                                            <td>{{ gaf.get_factor_display }}</td>
+                                            <td><i class="fas fa-check text-success"></i></td>
+                                            <td>{{ gaf.comments|default:"No comments" }}</td>
+                                            {% if request.user == agreement.supervisor %}
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary add-to-plan-btn" 
+                                                        data-source-type="PA"
+                                                        data-source-id="{{ agreement.id }}"
+                                                        data-gaf-id="{{ gaf.id }}">
+                                                    <i class="fas fa-plus"></i> Add to Plan
+                                                </button>
+                                            </td>
+                                            {% endif %}
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -294,6 +436,64 @@
         </div>
     </div>
 </div>
+
+{% if request.user == agreement.supervisor %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addToPlanButtons = document.querySelectorAll('.add-to-plan-btn');
+    
+    addToPlanButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const sourceType = this.dataset.sourceType;
+            const sourceId = this.dataset.sourceId;
+            const gafId = this.dataset.gafId;
+            const row = this.closest('tr');
+            const comments = row.querySelector('td:nth-child(3)').textContent;
+            
+            fetch('/performance/improvement-plan/add-item/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `source_type=${sourceType}&source_id=${sourceId}&gaf_id=${gafId}&comment=${encodeURIComponent(comments)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.classList.remove('btn-outline-primary');
+                    this.classList.add('btn-success');
+                    this.innerHTML = '<i class="fas fa-check"></i> Added';
+                    this.disabled = true;
+                } else {
+                    alert(data.error || 'Failed to add to improvement plan');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding to improvement plan');
+            });
+        });
+    });
+    
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

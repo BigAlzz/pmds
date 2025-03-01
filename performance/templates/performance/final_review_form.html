@@ -1,0 +1,831 @@
+{% extends 'performance/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load performance_tags %}
+
+{% block title %}
+{% if form.instance.pk %}Edit{% else %}Create{% endif %} Year-End Review - Performance Management System
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rating-section {
+        margin-bottom: 2rem;
+    }
+    
+    .rating-header {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .content-section {
+        background-color: #fff;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .label {
+        font-weight: bold;
+        color: #6c757d;
+    }
+    
+    .evidence-file-area {
+        border: 2px dashed #ddd;
+        padding: 1.5rem;
+        text-align: center;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .file-preview {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    /* Accordion styles */
+    .accordion-item {
+        margin-bottom: 1rem;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid #dee2e6;
+    }
+    
+    .accordion-header {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s;
+    }
+    
+    .accordion-header:hover {
+        background-color: #e9ecef;
+    }
+    
+    .accordion-content {
+        padding: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease-out;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .accordion-item.active .accordion-content {
+        padding: 1.5rem;
+        max-height: 3000px; /* Large enough to accommodate content */
+    }
+    
+    .accordion-item.active .accordion-header {
+        background-color: #e7f1ff;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .toggle-icon {
+        transition: transform 0.3s;
+    }
+    
+    .toggle-icon.expanded,
+    .accordion-item.active .toggle-icon {
+        transform: rotate(180deg);
+    }
+    
+    .accordion-title {
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .accordion-subtitle {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-11">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{% if object %}Edit{% else %}Create{% endif %} Year-End Review</h4>
+                    <a href="{% url 'performance:final_review_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="finalReviewForm">
+                        {% csrf_token %}
+                        
+                        <!-- Performance Agreement Selection and General Fields -->
+                        <div class="content-section">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    {{ form.performance_agreement|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.review_date|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="id_supervisor" class="form-label">Supervisor</label>
+                                        <input type="text" id="id_supervisor" class="form-control" readonly
+                                               value="{% if performance_agreement %}{{ performance_agreement.supervisor.get_full_name }}{% endif %}">
+                                        <div class="form-text">The supervisor from the selected performance agreement</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if performance_agreement %}
+                        <div class="alert alert-info mb-4">
+                            <h5 class="alert-heading">Performance Agreement Details</h5>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Employee:</strong> {{ performance_agreement.employee.get_full_name }}</p>
+                                    <p><strong>Job Title:</strong> {{ performance_agreement.employee.job_title }}</p>
+                                    <p><strong>Department:</strong> {{ performance_agreement.employee.department }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Supervisor:</strong> {{ performance_agreement.supervisor.get_full_name }}</p>
+                                    <p><strong>Period:</strong> {{ performance_agreement.plan_start_date|date:"M d, Y" }} - {{ performance_agreement.plan_end_date|date:"M d, Y" }}</p>
+                                    <p><strong>Status:</strong> {{ performance_agreement.get_status_display }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KRA Ratings -->
+                        <div class="rating-section">
+                            <div class="rating-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Key Responsibility Areas (KRAs)</h5>
+                                <span class="badge bg-primary">{{ kra_formset.forms|length }} KRAs</span>
+                            </div>
+                            {{ kra_formset.management_form }}
+                            
+                            <div class="kra-accordion">
+                                {% for form in kra_formset %}
+                                    {{ form.id }}
+                                    {{ form.kra }}
+                                    <div class="accordion-item" id="kra-item-{{ forloop.counter }}">
+                                        <div class="accordion-header" onclick="toggleAccordion('kra-item-{{ forloop.counter }}')">
+                                            <div>
+                                                {% if form.instance.pk %}
+                                                    {% with kra=form.instance.kra %}
+                                                        <h6 class="accordion-title">KRA {{ forloop.counter }}: {{ kra.description|truncatechars:100 }}</h6>
+                                                        <p class="accordion-subtitle">Weight: {{ kra.weighting }}% | Target: {{ kra.target_date|date:"M d, Y" }}</p>
+                                                    {% endwith %}
+                                                {% else %}
+                                                    {% with kra=performance_agreement.kras.all|get_item:forloop.counter0 %}
+                                                        <h6 class="accordion-title">KRA {{ forloop.counter }}: {{ kra.description|truncatechars:100 }}</h6>
+                                                        <p class="accordion-subtitle">Weight: {{ kra.weighting }}% | Target: {{ kra.target_date|date:"M d, Y" }}</p>
+                                                    {% endwith %}
+                                                {% endif %}
+                                            </div>
+                                            <i class="bi bi-chevron-down toggle-icon"></i>
+                                        </div>
+                                        <div class="accordion-content">
+                                            <div class="kra-details mb-3">
+                                                {% if form.instance.pk %}
+                                                    <!-- For existing ratings during edit -->
+                                                    {% with kra=form.instance.kra %}
+                                                        <p><span class="label">Description:</span> {{ kra.description }}</p>
+                                                        <p><span class="label">Objective:</span> {{ kra.performance_objective }}</p>
+                                                        <p><span class="label">Weight:</span> {{ kra.weighting }}%</p>
+                                                        <p><span class="label">Measurement:</span> {{ kra.measurement }}</p>
+                                                        <p><span class="label">Target Date:</span> {{ kra.target_date|date:"M d, Y" }}</p>
+                                                    {% endwith %}
+                                                {% else %}
+                                                    <!-- For new ratings during creation -->
+                                                    {% with kra=performance_agreement.kras.all|get_item:forloop.counter0 %}
+                                                        <p><span class="label">Description:</span> {{ kra.description }}</p>
+                                                        <p><span class="label">Objective:</span> {{ kra.performance_objective }}</p>
+                                                        <p><span class="label">Weight:</span> {{ kra.weighting }}%</p>
+                                                        <p><span class="label">Measurement:</span> {{ kra.measurement }}</p>
+                                                        <p><span class="label">Target Date:</span> {{ kra.target_date|date:"M d, Y" }}</p>
+                                                    {% endwith %}
+                                                {% endif %}
+                                            </div>
+                                            <hr>
+                                            <div class="row">
+                                                <!-- Employee Rating Section -->
+                                                <div class="col-md-6">
+                                                    <h6 class="text-primary">Employee Rating</h6>
+                                                    {{ form.employee_rating|as_crispy_field }}
+                                                    {{ form.employee_comments|as_crispy_field }}
+                                                    {{ form.employee_evidence|as_crispy_field }}
+                                                    {{ form.employee_evidence_file|as_crispy_field }}
+                                                    {% if form.instance.employee_evidence_file %}
+                                                    <div class="file-preview">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span><i class="bi bi-file-earmark"></i> {{ form.instance.get_evidence_filename }}</span>
+                                                            <div>
+                                                                <a href="{{ form.instance.employee_evidence_file.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                                                    <i class="bi bi-eye"></i> View
+                                                                </a>
+                                                                <a href="{{ form.instance.employee_evidence_file.url }}" class="btn btn-sm btn-secondary" download>
+                                                                    <i class="bi bi-download"></i> Download
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                <!-- Supervisor Rating Section -->
+                                                <div class="col-md-6">
+                                                    <h6 class="text-primary">Supervisor Rating</h6>
+                                                    {{ form.supervisor_rating|as_crispy_field }}
+                                                    {{ form.supervisor_comments|as_crispy_field }}
+                                                    {% if request.user == performance_agreement.supervisor %}
+                                                    <div class="add-to-plan supervisor-view" id="improvement-plan-section-{{ forloop.counter }}" style="display: none;">
+                                                        <div class="alert alert-warning">
+                                                            <strong>Low Rating Detected!</strong> This KRA should be added to the employee's improvement plan.
+                                                        </div>
+                                                        <div class="form-group mb-3">
+                                                            <label for="improvement-description-{{ forloop.counter }}">Improvement Description:</label>
+                                                            <textarea id="improvement-description-{{ forloop.counter }}" class="form-control" rows="3" 
+                                                                      placeholder="Describe the specific improvements needed for this KRA"></textarea>
+                                                        </div>
+                                                        <button type="button" 
+                                                                class="add-to-plan-btn btn btn-warning" 
+                                                                data-source-type="FYR"
+                                                                data-source-id="{% if form.instance.final_review %}{{ form.instance.final_review.id }}{% else %}0{% endif %}"
+                                                                data-kra-id="{% if form.instance.kra %}{{ form.instance.kra.id }}{% else %}0{% endif %}"
+                                                                data-index="{{ forloop.counter }}">
+                                                            <i class="bi bi-plus-circle"></i> Add to Improvement Plan
+                                                        </button>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <!-- Agreed Rating Section -->
+                                            <div class="row mt-4">
+                                                <div class="col-12">
+                                                    <div class="card bg-light">
+                                                        <div class="card-header">
+                                                            <h6 class="text-primary mb-0">Final Agreed Rating</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            {{ form.agreed_rating|as_crispy_field }}
+                                                            <div class="form-text text-muted">
+                                                                This is the final rating agreed upon by both the employee and supervisor.
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- GAF Ratings -->
+                        <div class="rating-section">
+                            <div class="rating-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Generic Assessment Factors (GAFs)</h5>
+                                <span class="badge bg-primary">{{ gaf_formset.forms|length }} GAFs</span>
+                            </div>
+                            {{ gaf_formset.management_form }}
+                            
+                            <div class="gaf-accordion">
+                                {% for form in gaf_formset %}
+                                    {{ form.id }}
+                                    {{ form.gaf }}
+                                    <div class="accordion-item" id="gaf-item-{{ forloop.counter }}">
+                                        <div class="accordion-header" onclick="toggleAccordion('gaf-item-{{ forloop.counter }}')">
+                                            <div>
+                                                {% if form.instance.pk %}
+                                                    <h6 class="accordion-title">GAF {{ forloop.counter }}: {{ form.instance.gaf.get_factor_display }}</h6>
+                                                    <p class="accordion-subtitle">{{ form.instance.gaf.comments|truncatechars:100 }}</p>
+                                                {% else %}
+                                                    {% with gaf=performance_agreement.gafs.all|get_item:forloop.counter0 %}
+                                                        <h6 class="accordion-title">GAF {{ forloop.counter }}: {{ gaf.get_factor_display }}</h6>
+                                                        <p class="accordion-subtitle">{{ gaf.comments|truncatechars:100 }}</p>
+                                                    {% endwith %}
+                                                {% endif %}
+                                            </div>
+                                            <i class="bi bi-chevron-down toggle-icon"></i>
+                                        </div>
+                                        <div class="accordion-content">
+                                            <div class="gaf-details mb-3">
+                                                {% if form.instance.pk %}
+                                                    <p><span class="label">Factor:</span> {{ form.instance.gaf.get_factor_display }}</p>
+                                                    <p><span class="label">Comments:</span> {{ form.instance.gaf.comments }}</p>
+                                                {% else %}
+                                                    {% with gaf=performance_agreement.gafs.all|get_item:forloop.counter0 %}
+                                                        <p><span class="label">Factor:</span> {{ gaf.get_factor_display }}</p>
+                                                        <p><span class="label">Comments:</span> {{ gaf.comments }}</p>
+                                                    {% endwith %}
+                                                {% endif %}
+                                            </div>
+                                            <hr>
+                                            <div class="row">
+                                                <!-- Employee Rating Section -->
+                                                <div class="col-md-6">
+                                                    <h6 class="text-primary">Employee Rating</h6>
+                                                    {{ form.employee_rating|as_crispy_field }}
+                                                    {{ form.employee_comments|as_crispy_field }}
+                                                    {{ form.employee_evidence|as_crispy_field }}
+                                                    {{ form.employee_evidence_file|as_crispy_field }}
+                                                    {% if form.instance.employee_evidence_file %}
+                                                    <div class="file-preview">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span><i class="bi bi-file-earmark"></i> {{ form.instance.get_evidence_filename }}</span>
+                                                            <div>
+                                                                <a href="{{ form.instance.employee_evidence_file.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                                                    <i class="bi bi-eye"></i> View
+                                                                </a>
+                                                                <a href="{{ form.instance.employee_evidence_file.url }}" class="btn btn-sm btn-secondary" download>
+                                                                    <i class="bi bi-download"></i> Download
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                <!-- Supervisor Rating Section -->
+                                                <div class="col-md-6">
+                                                    <h6 class="text-primary">Supervisor Rating</h6>
+                                                    {{ form.supervisor_rating|as_crispy_field }}
+                                                    {{ form.supervisor_comments|as_crispy_field }}
+                                                    {% if request.user == performance_agreement.supervisor %}
+                                                    <div class="add-to-plan supervisor-view" id="improvement-plan-section-{{ forloop.counter }}" style="display: none;">
+                                                        <div class="alert alert-warning">
+                                                            <strong>Low Rating Detected!</strong> This GAF should be added to the employee's improvement plan.
+                                                        </div>
+                                                        <div class="form-group mb-3">
+                                                            <label for="improvement-description-{{ forloop.counter }}">Improvement Description:</label>
+                                                            <textarea id="improvement-description-{{ forloop.counter }}" class="form-control" rows="3" 
+                                                                      placeholder="Describe the specific improvements needed for this GAF"></textarea>
+                                                        </div>
+                                                        <button type="button" 
+                                                                class="add-to-plan-btn btn btn-warning" 
+                                                                data-source-type="FYR"
+                                                                data-source-id="{% if form.instance.final_review %}{{ form.instance.final_review.id }}{% else %}0{% endif %}"
+                                                                data-gaf-id="{% if form.instance.gaf %}{{ form.instance.gaf.id }}{% else %}0{% endif %}"
+                                                                data-index="{{ forloop.counter }}">
+                                                            <i class="bi bi-plus-circle"></i> Add to Improvement Plan
+                                                        </button>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Overall Comments -->
+                        <div class="content-section">
+                            <h5 class="mb-3">Overall Comments</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.employee_overall_comments|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.supervisor_overall_comments|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ form.evidence_document|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Overall Assessment Section -->
+                        <div class="content-section">
+                            <h5 class="mb-3">Overall Assessment</h5>
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Assessment Rating Calculator</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>KRAs</th>
+                                                    <th>Weight</th>
+                                                    <th>Rating</th>
+                                                    <th>Score</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="assessment-table-body">
+                                                <!-- This will be populated by JavaScript -->
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="table-secondary">
+                                                    <td colspan="1"></td>
+                                                    <td id="total-weight">100%</td>
+                                                    <td></td>
+                                                    <td id="total-score">0</td>
+                                                </tr>
+                                                <tr class="table-warning">
+                                                    <th colspan="3">FINAL SCORE</th>
+                                                    <th id="final-score">0%</th>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <a href="{% url 'performance:final_review_list' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                            
+                            <!-- Save button always available -->
+                            <button type="submit" name="submit_action" value="save" class="btn btn-primary me-2">
+                                Save
+                            </button>
+                            
+                            {% if object.status == 'DRAFT' or object.status == 'PENDING_EMPLOYEE_RATING' or object.status == 'PENDING_SUPERVISOR_RATING' %}
+                                <!-- Submit for sign-off button -->
+                                <button type="submit" name="submit_action" value="submit_for_signoff" class="btn btn-success">
+                                    Submit for Sign-off
+                                </button>
+                            {% endif %}
+                            
+                            {% if object.status == 'PENDING_SUPERVISOR_SIGNOFF' and user == object.performance_agreement.supervisor %}
+                                <!-- Supervisor sign-off button -->
+                                <button type="submit" name="submit_action" value="supervisor_signoff" class="btn btn-success me-2">
+                                    Sign-off and Submit to Manager
+                                </button>
+                                
+                                <!-- Reject button for supervisor -->
+                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                    Reject
+                                </button>
+                            {% endif %}
+                            
+                            {% if object.status == 'PENDING_MANAGER_APPROVAL' and user == object.performance_agreement.supervisor.manager %}
+                                <!-- Manager approval button -->
+                                <button type="submit" name="submit_action" value="manager_approve" class="btn btn-success me-2">
+                                    Approve
+                                </button>
+                                
+                                <!-- Reject button for manager -->
+                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                    Reject
+                                </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                    
+                    <!-- Rejection Modal -->
+                    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="rejectModalLabel">Reject Review</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label for="rejection_reason">Reason for Rejection:</label>
+                                            <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="4" required></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" name="submit_action" value="reject" class="btn btn-danger">Reject</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle performance agreement selection change
+        const agreementSelect = document.getElementById('id_performance_agreement');
+        if (agreementSelect) {
+            agreementSelect.addEventListener('change', function() {
+                const selectedValue = this.value;
+                if (selectedValue) {
+                    window.location.href = window.location.pathname + '?performance_agreement=' + selectedValue;
+                }
+            });
+        }
+        
+        // Initialize the assessment calculator
+        initAssessmentCalculator();
+        
+        // Add event listeners to all rating dropdowns to update the assessment calculator
+        const allRatingDropdowns = document.querySelectorAll('select[name$="-agreed_rating"], select[name$="-supervisor_rating"], select[name$="-employee_rating"]');
+        allRatingDropdowns.forEach(dropdown => {
+            dropdown.addEventListener('change', function() {
+                updateAssessmentCalculator();
+            });
+        });
+        
+        // Auto-expand the first items in each section for better UX
+        const firstKraItem = document.querySelector('.kra-accordion .accordion-item');
+        const firstGafItem = document.querySelector('.gaf-accordion .accordion-item');
+        
+        if (firstKraItem) toggleAccordion(firstKraItem.id);
+        if (firstGafItem) toggleAccordion(firstGafItem.id);
+        
+        // Add event listeners to supervisor rating dropdowns
+        const supervisorRatingDropdowns = document.querySelectorAll('select[name$="-supervisor_rating"]');
+        supervisorRatingDropdowns.forEach((dropdown, index) => {
+            dropdown.addEventListener('change', function() {
+                const rating = parseInt(this.value);
+                const improvementSection = document.getElementById(`improvement-plan-section-${index + 1}`);
+                
+                if (improvementSection) {
+                    // Show improvement plan section if rating is 2 or lower
+                    if (rating && rating <= 2) {
+                        improvementSection.style.display = 'block';
+                    } else {
+                        improvementSection.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Check initial value
+            const initialRating = parseInt(dropdown.value);
+            const improvementSection = document.getElementById(`improvement-plan-section-${index + 1}`);
+            
+            if (improvementSection && initialRating && initialRating <= 2) {
+                improvementSection.style.display = 'block';
+            }
+        });
+        
+        // Add event listeners to improvement plan buttons
+        const addToPlanButtons = document.querySelectorAll('.add-to-plan-btn');
+        addToPlanButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const index = this.getAttribute('data-index');
+                addToImprovementPlan(this, index);
+            });
+        });
+    });
+    
+    function toggleAccordion(itemId) {
+        const item = document.getElementById(itemId);
+        if (!item) return;
+        
+        // Toggle active class on the item
+        item.classList.toggle('active');
+        
+        // Update the toggle icon
+        const icon = item.querySelector('.toggle-icon');
+        if (icon) {
+            icon.classList.toggle('expanded');
+        }
+        
+        // Toggle the content visibility explicitly to ensure it works
+        const content = item.querySelector('.accordion-content');
+        if (content) {
+            if (item.classList.contains('active')) {
+                content.style.maxHeight = content.scrollHeight + 'px';
+            } else {
+                content.style.maxHeight = '0';
+            }
+        }
+    }
+    
+    function initAssessmentCalculator() {
+        const tableBody = document.getElementById('assessment-table-body');
+        if (!tableBody) return;
+        
+        // Clear existing rows
+        tableBody.innerHTML = '';
+        
+        // Get all KRA items
+        const kraItems = document.querySelectorAll('.kra-accordion .accordion-item');
+        let rowIndex = 1;
+        
+        kraItems.forEach((item, index) => {
+            try {
+                // Extract KRA information
+                const kraTitle = item.querySelector('.accordion-title').textContent.trim();
+                
+                // Find the weight information - more robust selector
+                const kraDetails = item.querySelector('.kra-details');
+                let weight = 0;
+                
+                if (kraDetails) {
+                    const weightParagraphs = kraDetails.querySelectorAll('p');
+                    for (let p of weightParagraphs) {
+                        if (p.textContent.includes('Weight:')) {
+                            const weightMatch = p.textContent.match(/Weight:\s*(\d+\.?\d*)%/);
+                            if (weightMatch && weightMatch[1]) {
+                                weight = parseFloat(weightMatch[1]);
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                // Get the rating - check for agreed_rating first, then supervisor_rating, then employee_rating
+                let rating = 0;
+                const agreedRatingDropdown = item.querySelector('select[name$="-agreed_rating"]');
+                const supervisorRatingDropdown = item.querySelector('select[name$="-supervisor_rating"]');
+                const employeeRatingDropdown = item.querySelector('select[name$="-employee_rating"]');
+                
+                if (agreedRatingDropdown && agreedRatingDropdown.value) {
+                    rating = parseInt(agreedRatingDropdown.value);
+                } else if (supervisorRatingDropdown && supervisorRatingDropdown.value) {
+                    rating = parseInt(supervisorRatingDropdown.value);
+                } else if (employeeRatingDropdown && employeeRatingDropdown.value) {
+                    rating = parseInt(employeeRatingDropdown.value);
+                }
+                
+                // Calculate score
+                const score = rating ? (rating * weight / 100).toFixed(2) : 0;
+                
+                // Create table row
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${rowIndex}. ${kraTitle.substring(0, 50)}${kraTitle.length > 50 ? '...' : ''}</td>
+                    <td>${weight}%</td>
+                    <td>${rating || ''}</td>
+                    <td>${score}</td>
+                `;
+                tableBody.appendChild(row);
+                rowIndex++;
+            } catch (error) {
+                console.error('Error processing KRA item:', error);
+            }
+        });
+        
+        // Update totals
+        updateAssessmentTotals();
+    }
+    
+    function updateAssessmentCalculator() {
+        const tableBody = document.getElementById('assessment-table-body');
+        if (!tableBody) return;
+        
+        // Get all rows
+        const rows = tableBody.querySelectorAll('tr');
+        
+        // Get all KRA items
+        const kraItems = document.querySelectorAll('.kra-accordion .accordion-item');
+        
+        // Update each row with current rating values
+        kraItems.forEach((item, index) => {
+            if (index >= rows.length) return;
+            
+            try {
+                // Get the rating - check for agreed_rating first, then supervisor_rating, then employee_rating
+                let rating = 0;
+                const agreedRatingDropdown = item.querySelector('select[name$="-agreed_rating"]');
+                const supervisorRatingDropdown = item.querySelector('select[name$="-supervisor_rating"]');
+                const employeeRatingDropdown = item.querySelector('select[name$="-employee_rating"]');
+                
+                if (agreedRatingDropdown && agreedRatingDropdown.value) {
+                    rating = parseInt(agreedRatingDropdown.value);
+                } else if (supervisorRatingDropdown && supervisorRatingDropdown.value) {
+                    rating = parseInt(supervisorRatingDropdown.value);
+                } else if (employeeRatingDropdown && employeeRatingDropdown.value) {
+                    rating = parseInt(employeeRatingDropdown.value);
+                }
+                
+                // Get weight from the row
+                const weightCell = rows[index].querySelector('td:nth-child(2)');
+                const weight = parseFloat(weightCell.textContent);
+                
+                // Calculate score
+                const score = rating ? (rating * weight / 100).toFixed(2) : 0;
+                
+                // Update rating and score cells
+                const ratingCell = rows[index].querySelector('td:nth-child(3)');
+                const scoreCell = rows[index].querySelector('td:nth-child(4)');
+                
+                ratingCell.textContent = rating || '';
+                scoreCell.textContent = score;
+            } catch (error) {
+                console.error('Error updating KRA item:', error);
+            }
+        });
+        
+        // Update totals
+        updateAssessmentTotals();
+    }
+    
+    function updateAssessmentTotals() {
+        const tableBody = document.getElementById('assessment-table-body');
+        const totalWeightElement = document.getElementById('total-weight');
+        const totalScoreElement = document.getElementById('total-score');
+        const finalScoreElement = document.getElementById('final-score');
+        
+        if (!tableBody || !totalWeightElement || !totalScoreElement || !finalScoreElement) return;
+        
+        // Calculate total weight and score
+        let totalWeight = 0;
+        let totalScore = 0;
+        
+        const rows = tableBody.querySelectorAll('tr');
+        rows.forEach(row => {
+            const weightCell = row.querySelector('td:nth-child(2)');
+            const scoreCell = row.querySelector('td:nth-child(4)');
+            
+            const weight = parseFloat(weightCell.textContent);
+            const score = parseFloat(scoreCell.textContent) || 0;
+            
+            totalWeight += weight;
+            totalScore += score;
+        });
+        
+        // Update display
+        totalWeightElement.textContent = totalWeight + '%';
+        totalScoreElement.textContent = totalScore.toFixed(2);
+        
+        // Calculate final score (as percentage of maximum possible)
+        const finalScore = (totalScore / 4) * 100;
+        finalScoreElement.textContent = finalScore.toFixed(0) + '%';
+    }
+    
+    function addToImprovementPlan(button, index) {
+        const sourceType = button.dataset.sourceType;
+        const sourceId = button.dataset.sourceId;
+        const kraId = button.dataset.kraId;
+        const gafId = button.dataset.gafId;
+        
+        // Get the improvement description
+        const descriptionField = document.getElementById(`improvement-description-${index}`);
+        const improvementDescription = descriptionField ? descriptionField.value : '';
+        
+        // Get the comments from the supervisor comments field
+        const form = button.closest('.accordion-content');
+        const commentsField = form.querySelector('textarea[name$="-supervisor_comments"]');
+        const comments = commentsField ? commentsField.value : '';
+        
+        // Combine the comments with the improvement description
+        const fullComment = comments + "\n\nIMPROVEMENT NEEDED: " + improvementDescription;
+        
+        fetch('/performance/improvement-plan/add-item/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: 'source_type=' + sourceType + 
+                  '&source_id=' + sourceId + 
+                  (kraId ? '&kra_id=' + kraId : '') + 
+                  (gafId ? '&gaf_id=' + gafId : '') + 
+                  '&comment=' + encodeURIComponent(fullComment)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                button.classList.remove('btn-warning');
+                button.classList.add('btn-success');
+                button.innerHTML = '<i class="bi bi-check"></i> Added to Plan';
+                button.disabled = true;
+                
+                // Disable the description field
+                if (descriptionField) {
+                    descriptionField.disabled = true;
+                }
+            } else {
+                alert(data.error || 'Failed to add to improvement plan');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while adding to improvement plan');
+        });
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %} 

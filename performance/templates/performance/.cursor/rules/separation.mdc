@@ -1,0 +1,24 @@
+---
+description: Separates files into smaller pieces
+globs: *.py
+---
+# Separation Rules
+
+- **Single Responsibility:**  
+  Each file should represent one distinct unit of work.
+
+- **Component Breakdown:**  
+  Break features into self-contained components.
+
+- **Use Hooks:**  
+  Encapsulate logic and data access in custom hooks.
+
+- **Global vs. Local:**  
+  - **Global:** Place reusable components and hooks in shared/global folders.  
+  - **Local:** Keep object-specific components and hooks in localized folders.
+
+- **Separation of Concerns:**  
+  Maintain clear boundaries when creating or refactoring files.
+
+- **Readable and Declarative Code:**  
+  Rendered code should be very legible and clear. It should not include flow logic or ternary operators where possible.

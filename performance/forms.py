@@ -2,11 +2,17 @@ from django import forms
 from .models import (
     PerformanceAgreement,
     MidYearReview,
+    FinalReview,
     ImprovementPlan,
     PersonalDevelopmentPlan,
     KeyResponsibilityArea,
     CustomUser,
-    GenericAssessmentFactor
+    GenericAssessmentFactor,
+    KRAMidYearRating,
+    GAFMidYearRating,
+    KRAFinalRating,
+    GAFFinalRating,
+    ImprovementPlanItem
 )
 
 class UserProfileForm(forms.ModelForm):
@@ -138,8 +144,7 @@ class PerformanceAgreementForm(forms.ModelForm):
             'final_assessment_date',
             'employee_comments',
             'supervisor_comments',
-            'approver_comments',
-            'hr_comments',
+            'manager_comments',
             'batch_number'
         ]
         widgets = {
@@ -149,8 +154,7 @@ class PerformanceAgreementForm(forms.ModelForm):
             'final_assessment_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'employee_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'supervisor_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'approver_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'hr_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'manager_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'batch_number': forms.TextInput(attrs={'class': 'form-control'})
         }
 
@@ -166,27 +170,133 @@ class PerformanceAgreementForm(forms.ModelForm):
         self.fields['plan_start_date'].required = True
         self.fields['plan_end_date'].required = True
 
+class KRAMidYearRatingForm(forms.ModelForm):
+    kra = forms.ModelChoiceField(queryset=KeyResponsibilityArea.objects.all(), widget=forms.HiddenInput())
+
+    class Meta:
+        model = KRAMidYearRating
+        fields = [
+            'kra',
+            'employee_rating',
+            'employee_comments',
+            'employee_evidence',
+            'employee_evidence_file',
+            'supervisor_rating',
+            'supervisor_comments',
+            'agreed_rating'
+        ]
+        widgets = {
+            'employee_rating': forms.Select(attrs={'class': 'form-select'}),
+            'employee_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'employee_evidence': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'employee_evidence_file': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png'}),
+            'supervisor_rating': forms.Select(attrs={'class': 'form-select'}),
+            'supervisor_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'agreed_rating': forms.Select(attrs={'class': 'form-select'})
+        }
+
+class GAFMidYearRatingForm(forms.ModelForm):
+    gaf = forms.ModelChoiceField(queryset=GenericAssessmentFactor.objects.all(), widget=forms.HiddenInput())
+
+    class Meta:
+        model = GAFMidYearRating
+        fields = [
+            'gaf',
+            'employee_rating',
+            'employee_comments',
+            'employee_evidence',
+            'employee_evidence_file',
+            'supervisor_rating',
+            'supervisor_comments'
+        ]
+        widgets = {
+            'employee_rating': forms.Select(attrs={'class': 'form-select'}),
+            'employee_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'employee_evidence': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'employee_evidence_file': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png'}),
+            'supervisor_rating': forms.Select(attrs={'class': 'form-select'}),
+            'supervisor_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+        }
+
+KRAMidYearRatingFormSet = forms.inlineformset_factory(
+    MidYearReview,
+    KRAMidYearRating,
+    form=KRAMidYearRatingForm,
+    extra=0,
+    can_delete=False
+)
+
+GAFMidYearRatingFormSet = forms.inlineformset_factory(
+    MidYearReview,
+    GAFMidYearRating,
+    form=GAFMidYearRatingForm,
+    extra=0,
+    can_delete=False
+)
+
 class MidYearReviewForm(forms.ModelForm):
     class Meta:
         model = MidYearReview
         fields = [
             'performance_agreement',
-            'self_rating',
-            'supervisor_rating',
-            'final_rating',
-            'comments',
-            'review_date'
+            'review_date',
+            'employee_overall_comments',
+            'supervisor_overall_comments',
+            'evidence_document'
         ]
+        widgets = {
+            'review_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'employee_overall_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'supervisor_overall_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'evidence_document': forms.FileInput(attrs={'class': 'form-control'})
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            if user.role == CustomUser.EMPLOYEE:
+                # Employees can only see their own agreements
+                self.fields['performance_agreement'].queryset = PerformanceAgreement.objects.filter(employee=user)
+            elif user.role == CustomUser.MANAGER:
+                # Managers can see agreements of their employees
+                self.fields['performance_agreement'].queryset = PerformanceAgreement.objects.filter(employee__manager=user)
+            elif user.role == CustomUser.HR:
+                # HR can see all agreements
+                pass
+            else:
+                self.fields['performance_agreement'].queryset = PerformanceAgreement.objects.none()
 
 class ImprovementPlanForm(forms.ModelForm):
     class Meta:
         model = ImprovementPlan
+        fields = [
+            'status',
+            'end_date',
+            'overall_comments'
+        ]
+        widgets = {
+            'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'overall_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'status': forms.Select(attrs={'class': 'form-control'})
+        }
+
+class ImprovementPlanItemForm(forms.ModelForm):
+    class Meta:
+        model = ImprovementPlanItem
         fields = [
             'area_for_development',
             'interventions',
             'timeline',
             'status'
         ]
+        widgets = {
+            'area_for_development': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'interventions': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'timeline': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'status': forms.Select(attrs={'class': 'form-control'})
+        }
 
 class PersonalDevelopmentPlanForm(forms.ModelForm):
     class Meta:
@@ -199,4 +309,136 @@ class PersonalDevelopmentPlanForm(forms.ModelForm):
             'progress',
             'start_date',
             'end_date'
-        ] 
+        ]
+        widgets = {
+            'competency_gap': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'development_activities': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'timeline': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'expected_outcome': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'progress': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100, 'value': 0}),
+            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make progress optional
+        self.fields['progress'].required = False
+        # Set default value for progress
+        if not self.instance.pk:  # If this is a new instance
+            self.initial['progress'] = 0
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        
+        # Check that all required fields are provided
+        required_fields = ['competency_gap', 'development_activities', 'timeline', 'expected_outcome', 'start_date', 'end_date']
+        for field in required_fields:
+            if not cleaned_data.get(field):
+                self.add_error(field, f'This field is required.')
+        
+        # Validate date range if both dates are provided
+        if start_date and end_date and start_date > end_date:
+            self.add_error('end_date', 'End date must be after start date.')
+        
+        # Set default progress if not provided
+        if 'progress' not in cleaned_data or cleaned_data['progress'] is None:
+            cleaned_data['progress'] = 0
+            
+        return cleaned_data
+
+class KRAFinalRatingForm(forms.ModelForm):
+    class Meta:
+        model = KRAFinalRating
+        fields = [
+            'kra',
+            'employee_rating',
+            'employee_comments',
+            'employee_evidence',
+            'employee_evidence_file',
+            'supervisor_rating',
+            'supervisor_comments',
+            'agreed_rating'
+        ]
+        widgets = {
+            'employee_rating': forms.Select(attrs={'class': 'form-select'}),
+            'employee_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'employee_evidence': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'employee_evidence_file': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png'}),
+            'supervisor_rating': forms.Select(attrs={'class': 'form-select'}),
+            'supervisor_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'agreed_rating': forms.Select(attrs={'class': 'form-select'})
+        }
+
+class GAFFinalRatingForm(forms.ModelForm):
+    class Meta:
+        model = GAFFinalRating
+        fields = [
+            'gaf',
+            'employee_rating',
+            'employee_comments',
+            'employee_evidence',
+            'employee_evidence_file',
+            'supervisor_rating',
+            'supervisor_comments'
+        ]
+        widgets = {
+            'employee_rating': forms.Select(attrs={'class': 'form-select'}),
+            'employee_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'employee_evidence': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'employee_evidence_file': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png'}),
+            'supervisor_rating': forms.Select(attrs={'class': 'form-select'}),
+            'supervisor_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+        }
+
+KRAFinalRatingFormSet = forms.inlineformset_factory(
+    FinalReview,
+    KRAFinalRating,
+    form=KRAFinalRatingForm,
+    extra=0,
+    can_delete=False
+)
+
+GAFFinalRatingFormSet = forms.inlineformset_factory(
+    FinalReview,
+    GAFFinalRating,
+    form=GAFFinalRatingForm,
+    extra=0,
+    can_delete=False
+)
+
+class FinalReviewForm(forms.ModelForm):
+    class Meta:
+        model = FinalReview
+        fields = [
+            'performance_agreement',
+            'review_date',
+            'employee_overall_comments',
+            'supervisor_overall_comments',
+            'evidence_document'
+        ]
+        widgets = {
+            'review_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'employee_overall_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'supervisor_overall_comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'evidence_document': forms.FileInput(attrs={'class': 'form-control'})
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            if user.role == CustomUser.EMPLOYEE:
+                # Employees can only see their own agreements
+                self.fields['performance_agreement'].queryset = PerformanceAgreement.objects.filter(employee=user)
+            elif user.role == CustomUser.MANAGER:
+                # Managers can see agreements of their employees
+                self.fields['performance_agreement'].queryset = PerformanceAgreement.objects.filter(employee__manager=user)
+            elif user.role == CustomUser.HR:
+                # HR can see all agreements
+                pass
+            else:
+                self.fields['performance_agreement'].queryset = PerformanceAgreement.objects.none() 

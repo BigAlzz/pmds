@@ -7,6 +7,14 @@ from performance.models import GenericAssessmentFactor
 register = template.Library()
 
 @register.filter
+def get_item(queryset, index):
+    """Get an item from a queryset by index"""
+    try:
+        return queryset[index]
+    except (IndexError, TypeError):
+        return None
+
+@register.filter
 def get_display_fields(obj):
     """
     Returns a list of formatted field values for display in templates.
@@ -33,7 +41,7 @@ def get_display_fields(obj):
 def get_attribute(obj, attr_name):
     """
     Returns the value of an attribute from an object.
-    Handles special cases like dates, status, and progress.
+    Handles special cases like dates, status, progress, and foreign keys.
     """
     value = getattr(obj, attr_name, '')
     
@@ -50,6 +58,9 @@ def get_attribute(obj, attr_name):
         )
     elif isinstance(value, (datetime.date, datetime.datetime)):
         return formats.date_format(value, "M d, Y")
+    elif attr_name == 'employee' and hasattr(value, 'get_full_name'):
+        # Handle employee foreign key
+        return value.get_full_name()
     
     return value
 
@@ -133,3 +144,38 @@ def get_status_icon(status):
 def can_delete_agreement(agreement, user):
     """Template filter to check if a user can delete an agreement"""
     return agreement.can_delete(user)
+
+@register.filter
+def multiply(value, arg):
+    """Multiplies the value by the argument"""
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return 0
+
+@register.filter
+def divide(value, arg):
+    """Divides the value by the argument"""
+    try:
+        return float(value) / float(arg)
+    except (ValueError, TypeError, ZeroDivisionError):
+        return 0
+
+@register.filter
+def sum_attr(queryset, attr_name):
+    """Sums up the values of a specific attribute across all objects in a queryset"""
+    total = 0
+    for obj in queryset:
+        try:
+            # Handle nested attributes with dot notation
+            if '.' in attr_name:
+                parts = attr_name.split('.')
+                value = obj
+                for part in parts:
+                    value = getattr(value, part)
+            else:
+                value = getattr(obj, attr_name)
+            total += float(value)
+        except (AttributeError, ValueError, TypeError):
+            pass
+    return total

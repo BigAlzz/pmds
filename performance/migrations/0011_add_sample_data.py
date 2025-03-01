@@ -10,13 +10,52 @@ def create_sample_data(apps, schema_editor):
     GenericAssessmentFactor = apps.get_model('performance', 'GenericAssessmentFactor')
     SalaryLevel = apps.get_model('performance', 'SalaryLevel')
 
+    # Define GAF choices here
+    GAF_CHOICES = [
+        ('GAF1', 'Job knowledge'),
+        ('GAF2', 'Technical skills'),
+        ('GAF3', 'Acceptance of responsibility'),
+        ('GAF4', 'Quality of work'),
+        ('GAF5', 'Reliability'),
+        ('GAF6', 'Initiative'),
+        ('GAF7', 'Communication'),
+        ('GAF8', 'Interpersonal relationships'),
+        ('GAF9', 'Flexibility'),
+        ('GAF10', 'Team work'),
+        ('GAF11', 'Planning and execution'),
+        ('GAF12', 'Leadership'),
+        ('GAF13', 'Delegation and empowerment'),
+        ('GAF14', 'Management of financial resources'),
+        ('GAF15', 'Management of human resources'),
+    ]
+
+    # Create salary levels if they don't exist
+    salary_levels = {
+        '16': ('Level 16', 'Director-General'),
+        '15': ('Level 15', 'Deputy Director-General'),
+        '13': ('Level 13', 'Director'),
+        '11': ('Level 11', 'Deputy Director'),
+        '8': ('Level 8', 'Assistant Director'),
+        '7': ('Level 7', 'Senior Admin Officer')
+    }
+
+    for level, (title, notes) in salary_levels.items():
+        SalaryLevel.objects.get_or_create(
+            level=level,
+            defaults={
+                'typical_titles': title,
+                'notes': notes,
+                'numeric_level': int(level)
+            }
+        )
+
     # Get salary levels
-    level_16 = SalaryLevel.objects.get(level='16')  # DG
-    level_15 = SalaryLevel.objects.get(level='15')  # DDG
-    level_13 = SalaryLevel.objects.get(level='13')  # Director
-    level_11 = SalaryLevel.objects.get(level='11')  # Deputy Director
-    level_8 = SalaryLevel.objects.get(level='8')    # Junior Manager
-    level_7 = SalaryLevel.objects.get(level='7')    # Senior Admin Officer
+    level_16 = SalaryLevel.objects.get(level='16')
+    level_15 = SalaryLevel.objects.get(level='15')
+    level_13 = SalaryLevel.objects.get(level='13')
+    level_11 = SalaryLevel.objects.get(level='11')
+    level_8 = SalaryLevel.objects.get(level='8')
+    level_7 = SalaryLevel.objects.get(level='7')
 
     # Create DG (Approver)
     dg = CustomUser.objects.create(
@@ -24,7 +63,7 @@ def create_sample_data(apps, schema_editor):
         password=make_password('password123'),
         first_name='James',
         last_name='Smith',
-        email='dg.smith@department.gov.za',
+        email='dg.smith@gcra.gauteng.gov.za',
         employee_id='EMP001',
         persal_number='10023456',
         role='APPROVER',
@@ -146,7 +185,8 @@ def create_sample_data(apps, schema_editor):
         employee_submitted_date=timezone.now() - timedelta(days=5),
         supervisor_reviewed_date=timezone.now() - timedelta(days=2),
         employee_comments='I have set ambitious but achievable targets.',
-        supervisor_comments='The KRAs are well-defined and aligned with departmental goals.'
+        supervisor_comments='The KRAs are well-defined and aligned with departmental goals.',
+        batch_number='BATCH001'
     )
 
     # KRAs for Manager
@@ -187,7 +227,8 @@ def create_sample_data(apps, schema_editor):
         final_assessment_date=timezone.now().date() + timedelta(days=335),
         status='PENDING_SUPERVISOR_RATING',
         employee_submitted_date=timezone.now() - timedelta(days=3),
-        employee_comments='I have included all my key responsibilities and targets.'
+        employee_comments='I have included all my key responsibilities and targets.',
+        batch_number='BATCH002'
     )
 
     # KRAs for Employee 1
@@ -214,7 +255,8 @@ def create_sample_data(apps, schema_editor):
         plan_end_date=timezone.now().date() + timedelta(days=335),
         midyear_review_date=timezone.now().date() + timedelta(days=152),
         final_assessment_date=timezone.now().date() + timedelta(days=335),
-        status='DRAFT'
+        status='DRAFT',
+        batch_number='BATCH003'
     )
 
     # KRAs for Employee 2
@@ -232,7 +274,7 @@ def create_sample_data(apps, schema_editor):
 
     # Add Generic Assessment Factors for each agreement
     for agreement in [manager_agreement, emp1_agreement, emp2_agreement]:
-        for gaf in GenericAssessmentFactor.GAF_CHOICES:
+        for gaf in GAF_CHOICES:
             GenericAssessmentFactor.objects.create(
                 performance_agreement=agreement,
                 factor=gaf[0],
@@ -240,11 +282,17 @@ def create_sample_data(apps, schema_editor):
                 comments=f'Standard assessment for {gaf[1]}'
             )
 
-def remove_sample_data(apps, schema_editor):
+def reverse_sample_data(apps, schema_editor):
+    """Reverse the sample data creation"""
     CustomUser = apps.get_model('performance', 'CustomUser')
+    PerformanceAgreement = apps.get_model('performance', 'PerformanceAgreement')
+    SalaryLevel = apps.get_model('performance', 'SalaryLevel')
+    
     CustomUser.objects.filter(username__in=[
         'dg.smith', 'ddg.jones', 'hr.director', 'p.wilson', 'j.doe', 'a.smith'
     ]).delete()
+    
+    SalaryLevel.objects.all().delete()
 
 class Migration(migrations.Migration):
     dependencies = [
@@ -252,5 +300,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_sample_data, remove_sample_data),
+        migrations.RunPython(create_sample_data, reverse_sample_data),
     ] 

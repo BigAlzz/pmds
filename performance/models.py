@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.signals import user_logged_in, user_logged_out, user_login_failed
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import os
 
 class SalaryLevel(models.Model):
     """Model for storing salary level information"""
@@ -109,28 +110,42 @@ class KeyResponsibilityArea(models.Model):
             return (self.weighting * self.agreed_rating) / 100
         return 0
 
+    def calculate_progress(self):
+        """Calculate the progress percentage for this KRA"""
+        progress = 0
+        
+        # Check if evidence is uploaded
+        if self.supporting_documents:
+            progress += 30
+            
+        # Check if employee has rated and commented
+        if self.employee_rating is not None and self.employee_comments:
+            progress += 35
+            
+        # Check if supervisor has rated and commented
+        if self.supervisor_rating is not None and self.supervisor_comments:
+            progress += 35
+            
+        return progress
+
 class PerformanceAgreement(models.Model):
     """Model for storing performance agreements and goals"""
     DRAFT = 'DRAFT'
     PENDING_EMPLOYEE_RATING = 'PENDING_EMPLOYEE_RATING'
     PENDING_SUPERVISOR_RATING = 'PENDING_SUPERVISOR_RATING'
-    PENDING_AGREEMENT = 'PENDING_AGREEMENT'
-    PENDING_APPROVER_REVIEW = 'PENDING_APPROVER_REVIEW'
-    PENDING_HR_REVIEW = 'PENDING_HR_REVIEW'
+    PENDING_SUPERVISOR_SIGNOFF = 'PENDING_SUPERVISOR_SIGNOFF'
+    PENDING_MANAGER_APPROVAL = 'PENDING_MANAGER_APPROVAL'
     COMPLETED = 'COMPLETED'
     REJECTED = 'REJECTED'
-    RETURNED_FOR_REVISION = 'RETURNED_FOR_REVISION'
 
     STATUS_CHOICES = [
         (DRAFT, 'Draft'),
         (PENDING_EMPLOYEE_RATING, 'Pending Employee Self-Rating'),
         (PENDING_SUPERVISOR_RATING, 'Pending Supervisor Rating'),
-        (PENDING_AGREEMENT, 'Pending Rating Agreement'),
-        (PENDING_APPROVER_REVIEW, 'Pending Approver Review'),
-        (PENDING_HR_REVIEW, 'Pending HR Review'),
+        (PENDING_SUPERVISOR_SIGNOFF, 'Pending Supervisor Sign-off'),
+        (PENDING_MANAGER_APPROVAL, 'Pending Manager Approval'),
         (COMPLETED, 'Completed'),
         (REJECTED, 'Rejected'),
-        (RETURNED_FOR_REVISION, 'Returned for Revision'),
     ]
 
     employee = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -149,22 +164,18 @@ class PerformanceAgreement(models.Model):
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default=DRAFT)
     employee_submitted_date = models.DateTimeField(null=True, blank=True)
     supervisor_reviewed_date = models.DateTimeField(null=True, blank=True)
-    agreement_reached_date = models.DateTimeField(null=True, blank=True)
-    approver_reviewed_date = models.DateTimeField(null=True, blank=True)
-    approver_comments = models.TextField(blank=True)
-    hr_reviewed_date = models.DateTimeField(null=True, blank=True)
-    hr_comments = models.TextField(blank=True)
-    admin_approved_date = models.DateTimeField(null=True, blank=True)
+    supervisor_signoff_date = models.DateTimeField(null=True, blank=True)
+    manager_approval_date = models.DateTimeField(null=True, blank=True)
+    completion_date = models.DateTimeField(null=True, blank=True)
     
     # Overall Comments
     employee_comments = models.TextField(blank=True)
     supervisor_comments = models.TextField(blank=True)
-    admin_comments = models.TextField(blank=True)
+    manager_comments = models.TextField(blank=True)
     
     # Rejection Details
     rejection_reason = models.TextField(blank=True)
-    rejected_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='rejected_agreements')
-    rejected_date = models.DateTimeField(null=True, blank=True)
+    rejection_date = models.DateTimeField(null=True, blank=True)
     
     # Batch Processing for HR
     batch_number = models.CharField(max_length=50, blank=True, help_text="Batch number for HR processing")
@@ -194,7 +205,7 @@ class PerformanceAgreement(models.Model):
 
     def can_approve(self):
         """Check if PMDS administrator can approve"""
-        return self.status == self.PENDING_ADMIN_APPROVAL
+        return self.status == self.PENDING_MANAGER_APPROVAL
 
     def can_delete(self, user):
         """Check if the agreement can be deleted by the given user"""
@@ -235,48 +246,258 @@ class GenericAssessmentFactor(models.Model):
 
 class MidYearReview(models.Model):
     """Model for storing mid-year review data"""
-    performance_agreement = models.ForeignKey(PerformanceAgreement, on_delete=models.CASCADE)
-    self_rating = models.TextField()
-    supervisor_rating = models.TextField()
-    final_rating = models.CharField(max_length=20, choices=[
-        ('EXCEEDS', 'Exceeds Expectations'),
-        ('MEETS', 'Meets Expectations'),
-        ('NEEDS_IMPROVEMENT', 'Needs Improvement'),
-        ('UNSATISFACTORY', 'Unsatisfactory')
-    ])
-    comments = models.TextField()
+    RATING_CHOICES = [
+        (4, 'Performance Significantly Above Expectations (4)'),
+        (3, 'Fully Effective Performance (3)'),
+        (2, 'Performance Not Fully Effective (2)'),
+        (1, 'Unacceptable Performance (1)')
+    ]
+
+    performance_agreement = models.ForeignKey(PerformanceAgreement, on_delete=models.CASCADE, related_name='midyear_reviews')
     review_date = models.DateField(default=timezone.now)
+    
+    # Status tracking
+    status = models.CharField(max_length=30, choices=[
+        ('DRAFT', 'Draft'),
+        ('PENDING_EMPLOYEE_RATING', 'Pending Employee Self-Rating'),
+        ('PENDING_SUPERVISOR_RATING', 'Pending Supervisor Rating'),
+        ('PENDING_SUPERVISOR_SIGNOFF', 'Pending Supervisor Sign-off'),
+        ('PENDING_MANAGER_APPROVAL', 'Pending Manager Approval'),
+        ('COMPLETED', 'Completed'),
+        ('REJECTED', 'Rejected')
+    ], default='DRAFT')
 
-    # Fields to display in list view
-    display_fields = ['review_date', 'final_rating']
+    # Dates
+    employee_rating_date = models.DateTimeField(null=True, blank=True)
+    supervisor_rating_date = models.DateTimeField(null=True, blank=True)
+    supervisor_signoff_date = models.DateTimeField(null=True, blank=True)
+    manager_approval_date = models.DateTimeField(null=True, blank=True)
+    completion_date = models.DateTimeField(null=True, blank=True)
+    rejection_date = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
 
-    @property
-    def can_edit(self):
-        """Check if the review can be edited"""
-        return True  # You can customize this based on your business logic
+    # Overall Comments
+    employee_overall_comments = models.TextField(blank=True, help_text="Employee's overall comments on the mid-year review")
+    supervisor_overall_comments = models.TextField(blank=True, help_text="Supervisor's overall comments on the mid-year review")
+    manager_comments = models.TextField(blank=True, help_text="Manager's comments on the mid-year review")
+    
+    # Evidence Document
+    evidence_document = models.FileField(upload_to='midyear_review_evidence/', null=True, blank=True)
+
+    class Meta:
+        ordering = ['-review_date']
 
     def __str__(self):
         return f"Mid-Year Review for {self.performance_agreement.employee.get_full_name()} ({self.review_date})"
 
-class ImprovementPlan(models.Model):
-    """Model for storing employee improvement plans"""
-    employee = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    def calculate_overall_rating(self):
+        """Calculate the overall rating based on KRA and GAF ratings"""
+        kra_ratings = self.kra_ratings.all()
+        gaf_ratings = self.gaf_ratings.all()
+        
+        if not kra_ratings.exists():
+            return None
+            
+        total_kra_score = sum(rating.calculate_weighted_score() for rating in kra_ratings)
+        return total_kra_score
+
+    @property
+    def can_edit(self):
+        """Check if the review can be edited based on status"""
+        return self.status != 'COMPLETED'
+
+class KRAMidYearRating(models.Model):
+    """Model for storing KRA ratings for mid-year review"""
+    midyear_review = models.ForeignKey(MidYearReview, on_delete=models.CASCADE, related_name='kra_ratings')
+    kra = models.ForeignKey('KeyResponsibilityArea', on_delete=models.CASCADE)
+    
+    employee_rating = models.IntegerField(choices=MidYearReview.RATING_CHOICES, null=True, blank=True)
+    employee_comments = models.TextField(blank=True)
+    employee_evidence = models.TextField(blank=True, help_text="Description of evidence for the rating")
+    employee_evidence_file = models.FileField(upload_to='kra_evidence/%Y/%m/%d/', null=True, blank=True)
+    
+    supervisor_rating = models.IntegerField(choices=MidYearReview.RATING_CHOICES, null=True, blank=True)
+    supervisor_comments = models.TextField(blank=True)
+    
+    agreed_rating = models.IntegerField(choices=MidYearReview.RATING_CHOICES, null=True, blank=True, help_text="Final agreed rating between employee and supervisor")
+
+    def __str__(self):
+        return f"KRA Rating: {self.kra.description}"
+
+    def get_evidence_filename(self):
+        if self.employee_evidence_file:
+            return os.path.basename(self.employee_evidence_file.name)
+        return None
+
+    def calculate_weighted_score(self):
+        """Calculate the weighted score for this KRA"""
+        if self.agreed_rating is not None:
+            return (self.agreed_rating * self.kra.weighting) / 100
+        elif self.supervisor_rating is not None:
+            return (self.supervisor_rating * self.kra.weighting) / 100
+        return 0
+
+class GAFMidYearRating(models.Model):
+    """Model for storing GAF ratings for mid-year review"""
+    midyear_review = models.ForeignKey(MidYearReview, on_delete=models.CASCADE, related_name='gaf_ratings')
+    gaf = models.ForeignKey('GenericAssessmentFactor', on_delete=models.CASCADE)
+    
+    employee_rating = models.IntegerField(choices=MidYearReview.RATING_CHOICES, null=True, blank=True)
+    employee_comments = models.TextField(blank=True)
+    employee_evidence = models.TextField(blank=True, help_text="Description of evidence for the rating")
+    employee_evidence_file = models.FileField(upload_to='gaf_evidence/%Y/%m/%d/', null=True, blank=True)
+    
+    supervisor_rating = models.IntegerField(choices=MidYearReview.RATING_CHOICES, null=True, blank=True)
+    supervisor_comments = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"GAF Rating: {self.gaf.get_factor_display()}"
+
+    def get_evidence_filename(self):
+        if self.employee_evidence_file:
+            return os.path.basename(self.employee_evidence_file.name)
+        return None
+
+class ImprovementPlanItem(models.Model):
+    """Model for storing individual improvement items"""
+    PERFORMANCE_AGREEMENT = 'PA'
+    MIDYEAR_REVIEW = 'MYR'
+    
+    SOURCE_CHOICES = [
+        (PERFORMANCE_AGREEMENT, 'Performance Agreement'),
+        (MIDYEAR_REVIEW, 'Mid-Year Review'),
+    ]
+
+    improvement_plan = models.ForeignKey('ImprovementPlan', on_delete=models.CASCADE, related_name='items')
     area_for_development = models.TextField()
-    interventions = models.TextField()
-    timeline = models.TextField()
+    source_type = models.CharField(max_length=3, choices=SOURCE_CHOICES)
+    source_id = models.IntegerField(help_text="ID of the source object (PA or MYR)")
+    source_gaf = models.ForeignKey('GenericAssessmentFactor', on_delete=models.SET_NULL, null=True, blank=True)
+    interventions = models.TextField(blank=True)
+    timeline = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=[
         ('PENDING', 'Pending'),
         ('IN_PROGRESS', 'In Progress'),
         ('COMPLETED', 'Completed')
     ], default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Improvement Item: {self.area_for_development[:50]}..."
+        
+    def send_notification(self, notification_type, title, message):
+        """Send a notification about this improvement plan item"""
+        # Notify the employee
+        Notification.objects.create(
+            recipient=self.improvement_plan.employee,
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            related_object_type='improvement_plan_item',
+            related_object_id=self.id
+        )
+        
+        # Notify the supervisor if available
+        if self.improvement_plan.supervisor:
+            Notification.objects.create(
+                recipient=self.improvement_plan.supervisor,
+                notification_type=notification_type,
+                title=title,
+                message=message,
+                related_object_type='improvement_plan_item',
+                related_object_id=self.id
+            )
+
+class ImprovementPlan(models.Model):
+    """Model for storing employee improvement plans"""
+    employee = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    supervisor = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='supervised_improvement_plans')
+    status = models.CharField(max_length=20, choices=[
+        ('DRAFT', 'Draft'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('COMPLETED', 'Completed')
+    ], default='DRAFT')
+    start_date = models.DateField(auto_now_add=True)
+    end_date = models.DateField(null=True, blank=True)
+    overall_comments = models.TextField(blank=True)
     approved_by = models.ForeignKey(CustomUser, related_name='approved_plans', on_delete=models.SET_NULL, null=True, blank=True)
     approval_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    # Fields to display in list view
-    display_fields = ['area_for_development', 'status']
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"Improvement Plan for {self.employee.get_full_name()}"
+
+    @property
+    def can_edit(self):
+        """Check if the plan can be edited"""
+        return self.status != 'COMPLETED'
+
+    @property
+    def display_fields(self):
+        """Fields to display in the list view"""
+        return ['employee_name', 'status', 'start_date', 'end_date']
+        
+    @property
+    def employee_name(self):
+        """Return employee name for display in list"""
+        return self.employee.get_full_name() if self.employee else ""
+
+    def send_notification(self, notification_type, title, message):
+        """Send a notification to the relevant users"""
+        if notification_type == 'PLAN_UPDATE':
+            # Notify the employee
+            Notification.objects.create(
+                recipient=self.employee,
+                notification_type=notification_type,
+                title=title,
+                message=message,
+                related_object_type='improvement_plan',
+                related_object_id=self.id
+            )
+            
+            # Notify the supervisor if available
+            if self.supervisor:
+                Notification.objects.create(
+                    recipient=self.supervisor,
+                    notification_type=notification_type,
+                    title=title,
+                    message=message,
+                    related_object_type='improvement_plan',
+                    related_object_id=self.id
+                )
+        elif notification_type == 'APPROVAL':
+            # Notify the supervisor
+            if self.supervisor:
+                Notification.objects.create(
+                    recipient=self.supervisor,
+                    notification_type=notification_type,
+                    title=title,
+                    message=message,
+                    related_object_type='improvement_plan',
+                    related_object_id=self.id
+                )
+
+    @classmethod
+    def get_or_create_current_plan(cls, employee):
+        """Get the current improvement plan or create a new one"""
+        current_plan = cls.objects.filter(
+            employee=employee,
+            status__in=['DRAFT', 'IN_PROGRESS']
+        ).first()
+        
+        if not current_plan:
+            current_plan = cls.objects.create(
+                employee=employee,
+                supervisor=employee.manager,
+                status='DRAFT'
+            )
+        
+        return current_plan
 
 class PersonalDevelopmentPlan(models.Model):
     """Model for storing personal development plans"""
@@ -288,12 +509,22 @@ class PersonalDevelopmentPlan(models.Model):
     progress = models.IntegerField(help_text="Progress percentage", default=0)
     start_date = models.DateField()
     end_date = models.DateField()
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
 
-    # Fields to display in list view
-    display_fields = ['competency_gap', 'progress']
+    # Fields to display in list view - moved to property
+    @property
+    def display_fields(self):
+        """Return fields to display in list view"""
+        return ['employee', 'competency_gap', 'progress', 'start_date', 'end_date']
 
     def __str__(self):
         return f"Development Plan for {self.employee.get_full_name()}"
+    
+    @property
+    def can_edit(self):
+        """Check if the plan can be edited"""
+        return True
 
 class Feedback(models.Model):
     """Model for storing employee feedback"""
@@ -345,12 +576,11 @@ class Notification(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.get_notification_type_display()} for {self.recipient.get_full_name()}"
+        return f"{self.title} - {self.recipient.get_full_name()}"
 
     def mark_as_read(self):
-        if not self.read_at:
-            self.read_at = timezone.now()
-            self.save()
+        self.read_at = timezone.now()
+        self.save()
 
 class NotificationPreference(models.Model):
     """Model for storing user notification preferences"""
@@ -360,7 +590,7 @@ class NotificationPreference(models.Model):
     plan_updates = models.BooleanField(default=True)
     feedback_notifications = models.BooleanField(default=True)
     reminder_frequency = models.CharField(
-        max_length=20,
+        max_length=10,
         choices=[
             ('DAILY', 'Daily'),
             ('WEEKLY', 'Weekly'),
@@ -370,10 +600,135 @@ class NotificationPreference(models.Model):
     )
 
     def __str__(self):
-        return f"Notification preferences for {self.user.get_full_name()}"
+        return f"Notification Preferences for {self.user.get_full_name()}"
 
 @receiver(post_save, sender=CustomUser)
 def create_notification_preferences(sender, instance, created, **kwargs):
-    """Create notification preferences for new users"""
     if created:
         NotificationPreference.objects.create(user=instance)
+
+class FinalReview(models.Model):
+    """Model for storing year-end/final review data"""
+    RATING_CHOICES = [
+        (4, 'Performance Significantly Above Expectations (4)'),
+        (3, 'Fully Effective Performance (3)'),
+        (2, 'Performance Not Fully Effective (2)'),
+        (1, 'Unacceptable Performance (1)')
+    ]
+
+    performance_agreement = models.ForeignKey(PerformanceAgreement, on_delete=models.CASCADE, related_name='final_reviews')
+    review_date = models.DateField(default=timezone.now)
+    
+    # Status tracking
+    status = models.CharField(max_length=30, choices=[
+        ('DRAFT', 'Draft'),
+        ('PENDING_EMPLOYEE_RATING', 'Pending Employee Self-Rating'),
+        ('PENDING_SUPERVISOR_RATING', 'Pending Supervisor Rating'),
+        ('PENDING_SUPERVISOR_SIGNOFF', 'Pending Supervisor Sign-off'),
+        ('PENDING_MANAGER_APPROVAL', 'Pending Manager Approval'),
+        ('COMPLETED', 'Completed'),
+        ('REJECTED', 'Rejected')
+    ], default='DRAFT')
+
+    # Dates
+    employee_rating_date = models.DateTimeField(null=True, blank=True)
+    supervisor_rating_date = models.DateTimeField(null=True, blank=True)
+    supervisor_signoff_date = models.DateTimeField(null=True, blank=True)
+    manager_approval_date = models.DateTimeField(null=True, blank=True)
+    completion_date = models.DateTimeField(null=True, blank=True)
+    rejection_date = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
+
+    # Overall Comments
+    employee_overall_comments = models.TextField(blank=True, help_text="Employee's overall comments on the final review")
+    supervisor_overall_comments = models.TextField(blank=True, help_text="Supervisor's overall comments on the final review")
+    manager_comments = models.TextField(blank=True, help_text="Manager's comments on the final review")
+    
+    # Evidence Document
+    evidence_document = models.FileField(upload_to='final_review_evidence/', null=True, blank=True)
+
+    class Meta:
+        ordering = ['-review_date']
+
+    def __str__(self):
+        return f"Year-End Review for {self.performance_agreement.employee.get_full_name()} - {self.review_date}"
+
+    def calculate_overall_rating(self):
+        """Calculate the overall rating based on KRA ratings and weights"""
+        kra_ratings = self.kra_ratings.all()
+        if not kra_ratings:
+            return None
+        
+        total_weight = 0
+        weighted_sum = 0
+        
+        for rating in kra_ratings:
+            if rating.agreed_rating:
+                weighted_sum += rating.kra.weighting * rating.agreed_rating
+                total_weight += rating.kra.weighting
+            elif rating.supervisor_rating:
+                weighted_sum += rating.kra.weighting * rating.supervisor_rating
+                total_weight += rating.kra.weighting
+        
+        if total_weight > 0:
+            return weighted_sum / total_weight
+        return None
+
+    @property
+    def can_edit(self):
+        """Check if the review can be edited based on status"""
+        return self.status != 'COMPLETED'
+
+class KRAFinalRating(models.Model):
+    """Model for storing KRA ratings for final review"""
+    final_review = models.ForeignKey(FinalReview, on_delete=models.CASCADE, related_name='kra_ratings')
+    kra = models.ForeignKey('KeyResponsibilityArea', on_delete=models.CASCADE)
+    
+    employee_rating = models.IntegerField(choices=FinalReview.RATING_CHOICES, null=True, blank=True)
+    employee_comments = models.TextField(blank=True)
+    employee_evidence = models.TextField(blank=True, help_text="Description of evidence for the rating")
+    employee_evidence_file = models.FileField(upload_to='kra_final_evidence/%Y/%m/%d/', null=True, blank=True)
+    
+    supervisor_rating = models.IntegerField(choices=FinalReview.RATING_CHOICES, null=True, blank=True)
+    supervisor_comments = models.TextField(blank=True)
+    
+    agreed_rating = models.IntegerField(choices=FinalReview.RATING_CHOICES, null=True, blank=True, help_text="Final agreed rating between employee and supervisor")
+
+    def __str__(self):
+        return f"KRA Rating for {self.kra.description[:30]}... in {self.final_review}"
+
+    def get_evidence_filename(self):
+        """Get the filename of the evidence file"""
+        if self.employee_evidence_file:
+            return os.path.basename(self.employee_evidence_file.name)
+        return None
+
+    def calculate_weighted_score(self):
+        """Calculate the weighted score for this KRA"""
+        if self.agreed_rating:
+            return (self.kra.weighting * self.agreed_rating) / 100
+        elif self.supervisor_rating:
+            return (self.kra.weighting * self.supervisor_rating) / 100
+        return 0
+
+class GAFFinalRating(models.Model):
+    """Model for storing GAF ratings for final review"""
+    final_review = models.ForeignKey(FinalReview, on_delete=models.CASCADE, related_name='gaf_ratings')
+    gaf = models.ForeignKey('GenericAssessmentFactor', on_delete=models.CASCADE)
+    
+    employee_rating = models.IntegerField(choices=FinalReview.RATING_CHOICES, null=True, blank=True)
+    employee_comments = models.TextField(blank=True)
+    employee_evidence = models.TextField(blank=True, help_text="Description of evidence for the rating")
+    employee_evidence_file = models.FileField(upload_to='gaf_final_evidence/%Y/%m/%d/', null=True, blank=True)
+    
+    supervisor_rating = models.IntegerField(choices=FinalReview.RATING_CHOICES, null=True, blank=True)
+    supervisor_comments = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"GAF Rating for {self.gaf.get_factor_display()} in {self.final_review}"
+
+    def get_evidence_filename(self):
+        """Get the filename of the evidence file"""
+        if self.employee_evidence_file:
+            return os.path.basename(self.employee_evidence_file.name)
+        return None

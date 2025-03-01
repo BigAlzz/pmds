@@ -1,4 +1,4 @@
-{% extends 'performance/generic_form.html' %}
+{% extends 'performance/base.html' %}
 
 {% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Development Plan - Performance Management System{% endblock %}
 
@@ -14,51 +14,98 @@
                     <form method="post" novalidate>
                         {% csrf_token %}
                         
+                        {% if form.instance.pk %}
                         <div class="row mb-4">
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <h5>Employee</h5>
-                                {{ form.employee }}
+                                <p>{{ form.instance.employee.get_full_name }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Created</h5>
+                                <p>{{ form.instance.created_at|date:"F d, Y" }}</p>
                             </div>
                         </div>
+                        {% endif %}
 
-                        <div class="mb-4">
-                            <h5>Competency Gap</h5>
+                        <div class="mb-3">
+                            <label for="{{ form.competency_gap.id_for_label }}" class="form-label">Competency Gap</label>
                             {{ form.competency_gap }}
-                            <small class="form-text text-muted">Identify the skills or competencies that need development.</small>
+                            {% if form.competency_gap.errors %}
+                            <div class="text-danger">
+                                {{ form.competency_gap.errors }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Identify the skills or competencies that need development.</div>
                         </div>
 
-                        <div class="mb-4">
-                            <h5>Development Activities</h5>
+                        <div class="mb-3">
+                            <label for="{{ form.development_activities.id_for_label }}" class="form-label">Development Activities</label>
                             {{ form.development_activities }}
-                            <small class="form-text text-muted">List specific training, courses, or activities planned.</small>
+                            {% if form.development_activities.errors %}
+                            <div class="text-danger">
+                                {{ form.development_activities.errors }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">List specific training, courses, or activities planned.</div>
                         </div>
 
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <h5>Start Date</h5>
-                                {{ form.start_date }}
+                        <div class="mb-3">
+                            <label for="{{ form.timeline.id_for_label }}" class="form-label">Timeline</label>
+                            {{ form.timeline }}
+                            {% if form.timeline.errors %}
+                            <div class="text-danger">
+                                {{ form.timeline.errors }}
                             </div>
-                            <div class="col-md-6">
-                                <h5>End Date</h5>
-                                {{ form.end_date }}
-                            </div>
+                            {% endif %}
+                            <div class="form-text">Describe the timeline for completing these activities.</div>
                         </div>
 
-                        <div class="mb-4">
-                            <h5>Expected Outcome</h5>
+                        <div class="mb-3">
+                            <label for="{{ form.expected_outcome.id_for_label }}" class="form-label">Expected Outcome</label>
                             {{ form.expected_outcome }}
-                            <small class="form-text text-muted">Define what success looks like after completing this plan.</small>
+                            {% if form.expected_outcome.errors %}
+                            <div class="text-danger">
+                                {{ form.expected_outcome.errors }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Define what success looks like after completing this plan.</div>
                         </div>
 
-                        <div class="mb-4">
-                            <h5>Progress (%)</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date</label>
+                                {{ form.start_date }}
+                                {% if form.start_date.errors %}
+                                <div class="text-danger">
+                                    {{ form.start_date.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date</label>
+                                {{ form.end_date }}
+                                {% if form.end_date.errors %}
+                                <div class="text-danger">
+                                    {{ form.end_date.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.progress.id_for_label }}" class="form-label">Progress (%)</label>
                             {{ form.progress }}
-                            <small class="form-text text-muted">Current progress towards completion (0-100).</small>
+                            {% if form.progress.errors %}
+                            <div class="text-danger">
+                                {{ form.progress.errors }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Current progress towards completion (0-100).</div>
                         </div>
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <div class="d-flex justify-content-between mt-4">
                             <button type="submit" class="btn btn-primary">Save Plan</button>
-                            <a href="{% url 'development_plan_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <a href="{% url 'performance:development_plan_list' %}" class="btn btn-outline-secondary">Cancel</a>
                         </div>
                     </form>
                 </div>

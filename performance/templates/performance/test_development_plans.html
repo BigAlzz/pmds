@@ -1,0 +1,48 @@
+{% extends 'performance/base.html' %}
+{% load performance_tags %}
+
+{% block title %}{{ title }} - Performance Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">{{ title }}</h4>
+        </div>
+        <div class="card-body">
+            {% if plans %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Employee</th>
+                            <th>Competency Gap</th>
+                            <th>Progress</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in plans %}
+                        <tr>
+                            <td>{{ plan.id }}</td>
+                            <td>{{ plan.employee.get_full_name }}</td>
+                            <td>{{ plan.competency_gap }}</td>
+                            <td>{{ plan.progress }}%</td>
+                            <td>{{ plan.start_date }}</td>
+                            <td>{{ plan.end_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No development plans found.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

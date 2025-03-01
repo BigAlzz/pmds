@@ -157,6 +157,252 @@
         color: #6c757d;
         margin-top: 0.25rem;
     }
+
+    /* New KRA Card Styles */
+    .kra-section {
+        margin-bottom: 2rem;
+    }
+
+    .kra-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.75rem;
+        margin-bottom: 1.5rem;
+        background-color: #fff;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05);
+    }
+
+    .kra-card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .kra-header {
+        padding: 1.25rem;
+        background: linear-gradient(to right, #f8f9fa, #ffffff);
+        border-bottom: 1px solid #dee2e6;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s;
+    }
+
+    .kra-header:hover {
+        background: linear-gradient(to right, #e9ecef, #f8f9fa);
+    }
+
+    .kra-header h6 {
+        margin: 0;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .kra-title {
+        background-color: #4e73df;
+        color: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 0.5rem;
+        margin-right: 0.75rem;
+        font-size: 0.85rem;
+        display: inline-block;
+    }
+
+    .kra-content {
+        padding: 1.75rem;
+        display: none;
+        background-color: #fcfcfc;
+        border-bottom-left-radius: 0.75rem;
+        border-bottom-right-radius: 0.75rem;
+    }
+
+    .kra-content.show {
+        display: block;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .kra-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.75rem;
+    }
+
+    .kra-field-group {
+        margin-bottom: 1.25rem;
+        position: relative;
+    }
+
+    .kra-field-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        display: block;
+        font-size: 0.95rem;
+    }
+
+    .kra-field-group textarea,
+    .kra-field-group input {
+        border: 1px solid #ced4da;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        width: 100%;
+    }
+
+    .kra-field-group textarea:focus,
+    .kra-field-group input:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        outline: none;
+    }
+
+    .kra-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .weight-badge {
+        background-color: #f1f5f9;
+        padding: 0.5rem 0.85rem;
+        border-radius: 2rem;
+        font-size: 0.9rem;
+        color: #495057;
+        font-weight: 600;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+    }
+
+    .weight-value {
+        color: #4e73df;
+        font-weight: 700;
+        margin-left: 0.25rem;
+    }
+
+    .toggle-icon {
+        transition: transform 0.3s ease;
+        font-size: 1.1rem;
+        color: #6c757d;
+    }
+
+    .toggle-icon.expanded {
+        transform: rotate(180deg);
+        color: #4e73df;
+    }
+
+    .delete-kra {
+        border-radius: 50%;
+        width: 2.25rem;
+        height: 2.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: all 0.2s;
+    }
+
+    .delete-kra:hover {
+        background-color: #dc3545;
+        color: white;
+        border-color: #dc3545;
+    }
+
+    .weight-total-indicator {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 2rem;
+        padding: 0.75rem 1.5rem;
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .weight-total-indicator.warning {
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+        color: #856404;
+        animation: pulse 2s infinite;
+    }
+
+    .weight-total-indicator.success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    /* Weight-based styling */
+    .weight-high .weight-badge {
+        background-color: #e8f5e9;
+        border-color: #c8e6c9;
+    }
+    
+    .weight-high .weight-value {
+        color: #2e7d32;
+    }
+    
+    .weight-medium .weight-badge {
+        background-color: #fff8e1;
+        border-color: #ffecb3;
+    }
+    
+    .weight-medium .weight-value {
+        color: #f57f17;
+    }
+    
+    .weight-low .weight-badge {
+        background-color: #f5f5f5;
+        border-color: #e0e0e0;
+    }
+    
+    /* Animation for newly added KRAs */
+    .newly-added {
+        animation: highlight-new 1s ease-in-out;
+    }
+    
+    @keyframes highlight-new {
+        0% { background-color: #e3f2fd; transform: translateY(20px); opacity: 0; }
+        50% { background-color: #e3f2fd; }
+        100% { background-color: #fff; transform: translateY(0); opacity: 1; }
+    }
+
+    .delete-controls {
+        background-color: #fff8f8;
+        border: 1px solid #ffdddd;
+        border-radius: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        transition: all 0.2s;
+    }
+    
+    .delete-controls:hover {
+        background-color: #ffe8e8;
+    }
+    
+    .delete-controls .form-check-input:checked + .form-check-label {
+        font-weight: bold;
+    }
 </style>
 {% endblock %}
 
@@ -206,8 +452,218 @@
                         {{ form.supervisor_comments|as_crispy_field }}
                     </div>
                     <div class="col-md-6">
+                        {{ form.manager_comments|as_crispy_field }}
+                        {% comment %}
                         {{ form.approver_comments|as_crispy_field }}
                         {{ form.hr_comments|as_crispy_field }}
+                        {% endcomment %}
+                    </div>
+                </div>
+
+                <!-- Key Result Areas (KRAs) -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Key Result Areas (KRAs)</h5>
+                        <button type="button" class="btn btn-primary" id="add-kra">
+                            <i class="bi bi-plus-lg"></i> Add KRA
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        {{ kra_formset.management_form }}
+                        <div id="kra-formset" class="kra-section">
+                            {% for kra_form in kra_formset %}
+                            <div class="kra-card">
+                                <div class="kra-header" onclick="toggleKRA(this)">
+                                    <h6>
+                                        <span class="kra-title">KRA {{ forloop.counter }}</span>
+                                        {% if kra_form.description.value %}
+                                        {{ kra_form.description.value|truncatechars:50 }}
+                                        {% endif %}
+                                    </h6>
+                                    <div class="kra-actions">
+                                        <span class="weight-badge">
+                                            Weight: <span class="weight-value">{{ kra_form.weighting.value|default:"0" }}%</span>
+                                        </span>
+                                        <div class="delete-controls d-flex align-items-center me-2">
+                                            <input type="checkbox" class="form-check-input me-1" id="id_kras-{{ forloop.counter0 }}-DELETE" name="kras-{{ forloop.counter0 }}-DELETE" {% if kra_form.DELETE.value %}checked{% endif %} title="Check to delete this KRA">
+                                            <label class="form-check-label small text-danger" for="id_kras-{{ forloop.counter0 }}-DELETE">
+                                                Delete
+                                            </label>
+                                        </div>
+                                        <i class="bi bi-chevron-down toggle-icon"></i>
+                                    </div>
+                                </div>
+                                <div class="kra-content">
+                                    <div class="kra-grid">
+                                        <div class="kra-field-group">
+                                            {{ kra_form.id }}
+                                            <label>Description <span class="text-danger">*</span></label>
+                                            {{ kra_form.description }}
+                                            <small class="form-text text-muted">Key responsibility area based on job description</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Performance Objective <span class="text-danger">*</span></label>
+                                            {{ kra_form.performance_objective }}
+                                            <small class="form-text text-muted">What needs to be achieved</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Weight (%) <span class="text-danger">*</span></label>
+                                            {{ kra_form.weighting }}
+                                            <small class="form-text text-muted">Importance relative to other KRAs (total must be 100%)</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Measurement <span class="text-danger">*</span></label>
+                                            {{ kra_form.measurement }}
+                                            <small class="form-text text-muted">How this KRA will be measured/assessed</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Target Date</label>
+                                            {{ kra_form.target_date }}
+                                            <small class="form-text text-muted">When this KRA should be completed</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Tools Required</label>
+                                            {{ kra_form.tools }}
+                                            <small class="form-text text-muted">Resources needed to achieve this KRA</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Potential Barriers</label>
+                                            {{ kra_form.barriers }}
+                                            <small class="form-text text-muted">Challenges that might affect achievement</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Evidence Examples</label>
+                                            {{ kra_form.evidence_examples }}
+                                            <small class="form-text text-muted">Examples of evidence that can be provided</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Empty form template for new KRAs -->
+                        <script type="text/template" id="empty-form-template">
+                            <div class="kra-card">
+                                <div class="kra-header" onclick="toggleKRA(this)">
+                                    <h6>
+                                        <span class="kra-title">New KRA</span>
+                                    </h6>
+                                    <div class="kra-actions">
+                                        <span class="weight-badge">
+                                            Weight: <span class="weight-value">0%</span>
+                                        </span>
+                                        <div class="delete-controls d-flex align-items-center me-2">
+                                            <input type="checkbox" class="form-check-input me-1" id="id_kras-__prefix__-DELETE" name="kras-__prefix__-DELETE" title="Check to delete this KRA">
+                                            <label class="form-check-label small text-danger" for="id_kras-__prefix__-DELETE">
+                                                Delete
+                                            </label>
+                                        </div>
+                                        <i class="bi bi-chevron-down toggle-icon"></i>
+                                    </div>
+                                </div>
+                                <div class="kra-content show">
+                                    <div class="kra-grid">
+                                        <div class="kra-field-group">
+                                            {{ kra_formset.empty_form.id }}
+                                            <label>Description <span class="text-danger">*</span></label>
+                                            {{ kra_formset.empty_form.description }}
+                                            <small class="form-text text-muted">Key responsibility area based on job description</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Performance Objective <span class="text-danger">*</span></label>
+                                            {{ kra_formset.empty_form.performance_objective }}
+                                            <small class="form-text text-muted">What needs to be achieved</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Weight (%) <span class="text-danger">*</span></label>
+                                            {{ kra_formset.empty_form.weighting }}
+                                            <small class="form-text text-muted">Importance relative to other KRAs (total must be 100%)</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Measurement <span class="text-danger">*</span></label>
+                                            {{ kra_formset.empty_form.measurement }}
+                                            <small class="form-text text-muted">How this KRA will be measured/assessed</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Target Date</label>
+                                            {{ kra_formset.empty_form.target_date }}
+                                            <small class="form-text text-muted">When this KRA should be completed</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Tools Required</label>
+                                            {{ kra_formset.empty_form.tools }}
+                                            <small class="form-text text-muted">Resources needed to achieve this KRA</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Potential Barriers</label>
+                                            {{ kra_formset.empty_form.barriers }}
+                                            <small class="form-text text-muted">Challenges that might affect achievement</small>
+                                        </div>
+                                        <div class="kra-field-group">
+                                            <label>Evidence Examples</label>
+                                            {{ kra_formset.empty_form.evidence_examples }}
+                                            <small class="form-text text-muted">Examples of evidence that can be provided</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </script>
+
+                        <!-- Weight Total Indicator -->
+                        <div class="weight-total-indicator">
+                            <i class="bi bi-calculator"></i>
+                            <span>Total Weight: <strong id="totalWeight">0</strong>%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generic Assessment Factors (GAFs) -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Section B: Generic Assessment Factors (GAFs)</h5>
+                        <span id="gafCounter" class="badge bg-warning">0 of 5 selected</span>
+                    </div>
+                    <div class="card-body">
+                        {{ gaf_formset.management_form }}
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle"></i> Please select exactly 5 Generic Assessment Factors that are most relevant to your role.
+                        </div>
+                        <div class="row row-cols-1 row-cols-md-3 g-3">
+                            {% for gaf_form in gaf_formset %}
+                            <div class="col">
+                                <div class="gaf-item border rounded p-2">
+                                    <div class="form-check">
+                                        {{ gaf_form.is_applicable }}
+                                        <label class="form-check-label fw-medium" for="{{ gaf_form.is_applicable.id_for_label }}">
+                                            {% with factor_code=gaf_form.initial.factor %}
+                                                {% if factor_code == 'GAF1' %}Job knowledge
+                                                {% elif factor_code == 'GAF2' %}Technical skills
+                                                {% elif factor_code == 'GAF3' %}Acceptance of responsibility
+                                                {% elif factor_code == 'GAF4' %}Quality of work
+                                                {% elif factor_code == 'GAF5' %}Reliability
+                                                {% elif factor_code == 'GAF6' %}Initiative
+                                                {% elif factor_code == 'GAF7' %}Communication
+                                                {% elif factor_code == 'GAF8' %}Interpersonal relationships
+                                                {% elif factor_code == 'GAF9' %}Flexibility
+                                                {% elif factor_code == 'GAF10' %}Team work
+                                                {% elif factor_code == 'GAF11' %}Planning and execution
+                                                {% elif factor_code == 'GAF12' %}Leadership
+                                                {% elif factor_code == 'GAF13' %}Delegation and empowerment
+                                                {% elif factor_code == 'GAF14' %}Management of financial resources
+                                                {% elif factor_code == 'GAF15' %}Management of human resources
+                                                {% endif %}
+                                            {% endwith %}
+                                        </label>
+                                        {{ gaf_form.factor }}
+                                        <div class="comments-section mt-2" style="display: none;">
+                                            {{ gaf_form.comments|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
 
@@ -224,52 +680,72 @@
                 </div>
                 {% endif %}
 
-                <!-- Action Buttons -->
-                <div class="d-flex justify-content-between">
-                    <a href="{% url 'performance:performance_agreement_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Back to List
-                    </a>
-                    <div>
-                        {% if can_approve %}
-                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#returnModal">
-                                <i class="bi bi-arrow-return-left"></i> Return for Revision
-                            </button>
-                            <button type="submit" name="approve" class="btn btn-success">
-                                <i class="bi bi-check-circle"></i> Approve
-                            </button>
-                        {% else %}
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Save Changes
-                            </button>
-                        {% endif %}
-                    </div>
+                <!-- Form Buttons -->
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'performance:performance_agreement_list' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                    
+                    <!-- Save button always available -->
+                    <button type="submit" name="submit_action" value="save" class="btn btn-primary me-2">
+                        Save
+                    </button>
+                    
+                    {% if object.status == 'DRAFT' or object.status == 'PENDING_EMPLOYEE_RATING' or object.status == 'PENDING_SUPERVISOR_RATING' %}
+                        <!-- Submit for sign-off button -->
+                        <button type="submit" name="submit_action" value="submit_for_signoff" class="btn btn-success">
+                            Submit for Sign-off
+                        </button>
+                    {% endif %}
+                    
+                    {% if object.status == 'PENDING_SUPERVISOR_SIGNOFF' and user == object.supervisor %}
+                        <!-- Supervisor sign-off button -->
+                        <button type="submit" name="submit_action" value="supervisor_signoff" class="btn btn-success me-2">
+                            Sign-off and Submit to Manager
+                        </button>
+                        
+                        <!-- Reject button for supervisor -->
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                            Reject
+                        </button>
+                    {% endif %}
+                    
+                    {% if object.status == 'PENDING_MANAGER_APPROVAL' and user == object.supervisor.manager %}
+                        <!-- Manager approval button -->
+                        <button type="submit" name="submit_action" value="manager_approve" class="btn btn-success me-2">
+                            Approve
+                        </button>
+                        
+                        <!-- Reject button for manager -->
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                            Reject
+                        </button>
+                    {% endif %}
                 </div>
             </form>
-        </div>
-    </div>
-</div>
-
-<!-- Return for Revision Modal -->
-<div class="modal fade" id="returnModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Return for Revision</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            
+            <!-- Rejection Modal -->
+            <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="rejectModalLabel">Reject Agreement</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="rejection_reason">Reason for Rejection:</label>
+                                    <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="4" required></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" name="submit_action" value="reject" class="btn btn-danger">Reject</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <form method="post">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="rejection_reason" class="form-label">Reason for Return</label>
-                        <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3" required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" name="return" class="btn btn-warning">Return for Revision</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -304,6 +780,65 @@
         }
     }
 
+    // Add new KRA row functionality
+    function updateFormIndex(element, index) {
+        ['id', 'name'].forEach(attr => {
+            if (element.getAttribute(attr)) {
+                element.setAttribute(
+                    attr,
+                    element.getAttribute(attr).replace('-__prefix__-', `-${index}-`)
+                );
+            }
+        });
+    }
+
+    function addKRARow() {
+        const formsetContainer = document.getElementById('kra-formset');
+        const totalForms = document.getElementById('id_kras-TOTAL_FORMS');
+        const currentIndex = parseInt(totalForms.value);
+        
+        const emptyFormHtml = document.getElementById('empty-form-template')?.innerHTML || '';
+        if (emptyFormHtml) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = emptyFormHtml.replace(/__prefix__/g, currentIndex);
+            
+            const newKRA = tempDiv.firstElementChild;
+            formsetContainer.appendChild(newKRA);
+            
+            // Update form count
+            totalForms.value = currentIndex + 1;
+            
+            // Initialize new form fields
+            newKRA.querySelectorAll('input, textarea').forEach(input => {
+                if (input.type === 'text' || input.type === 'number' || input.tagName === 'TEXTAREA') {
+                    input.value = '';
+                }
+            });
+            
+            // Add animation class
+            newKRA.classList.add('newly-added');
+            setTimeout(() => {
+                newKRA.classList.remove('newly-added');
+            }, 1000);
+            
+            // Scroll to new KRA with smooth animation
+            newKRA.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Auto-focus the first input field
+            const firstInput = newKRA.querySelector('textarea, input[type="text"]');
+            if (firstInput) {
+                setTimeout(() => {
+                    firstInput.focus();
+                }, 500);
+            }
+            
+            calculateTotalWeight();
+        }
+    }
+
+    // Add click handler for the Add KRA button
+    addButton.addEventListener('click', addKRARow);
+
     // Monitor weighting changes
     document.addEventListener('input', function(e) {
         if (e.target.name.endsWith('-weighting')) {
@@ -313,12 +848,32 @@
 
     // Handle KRA deletion
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('delete-kra')) {
-            const row = e.target.closest('tr');
-            const deleteCheckbox = row.querySelector('input[type="checkbox"]');
+        if (e.target.classList.contains('delete-kra') || e.target.closest('.delete-kra')) {
+            const kraCard = e.target.closest('.kra-card');
+            const deleteCheckbox = kraCard.querySelector('input[name$="-DELETE"]');
+            
             if (deleteCheckbox) {
                 deleteCheckbox.checked = true;
-                row.style.display = 'none';
+                kraCard.classList.add('marked-for-deletion');
+                kraCard.style.opacity = '0.6';
+                calculateTotalWeight();
+            }
+        }
+    });
+
+    // Handle delete checkbox changes
+    document.addEventListener('change', function(e) {
+        if (e.target.name && e.target.name.endsWith('-DELETE')) {
+            const kraCard = e.target.closest('.kra-card');
+            
+            if (kraCard) {
+                if (e.target.checked) {
+                    kraCard.classList.add('marked-for-deletion');
+                    kraCard.style.opacity = '0.6';
+                } else {
+                    kraCard.classList.remove('marked-for-deletion');
+                    kraCard.style.opacity = '1';
+                }
                 calculateTotalWeight();
             }
         }
@@ -372,7 +927,7 @@
         checkbox.addEventListener('change', function() {
             updateGAFState(this);
         });
-        // Initialize counter without enforcing selection
+        // Initialize state
         if (checkbox.checked) {
             const gafItem = checkbox.closest('.gaf-item');
             const commentsSection = gafItem.querySelector('.comments-section');
@@ -477,5 +1032,113 @@ document.addEventListener('DOMContentLoaded', function() {
         calculateDates(startDateInput.value);
     }
 });
+
+function toggleKRA(header) {
+    const content = header.nextElementSibling;
+    const icon = header.querySelector('.toggle-icon');
+    
+    // Close all other open KRAs first (optional - for accordion behavior)
+    // document.querySelectorAll('.kra-content.show').forEach(openContent => {
+    //     if (openContent !== content) {
+    //         openContent.classList.remove('show');
+    //         openContent.previousElementSibling.querySelector('.toggle-icon').classList.remove('expanded');
+    //     }
+    // });
+    
+    if (content.classList.contains('show')) {
+        content.classList.remove('show');
+        icon.classList.remove('expanded');
+    } else {
+        content.classList.add('show');
+        icon.classList.add('expanded');
+    }
+}
+
+function addKRARow() {
+    const formsetContainer = document.getElementById('kra-formset');
+    const totalForms = document.getElementById('id_kras-TOTAL_FORMS');
+    const currentIndex = parseInt(totalForms.value);
+    
+    const emptyFormHtml = document.getElementById('empty-form-template')?.innerHTML || '';
+    if (emptyFormHtml) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = emptyFormHtml.replace(/__prefix__/g, currentIndex);
+        
+        const newKRA = tempDiv.firstElementChild;
+        formsetContainer.appendChild(newKRA);
+        
+        // Update form count
+        totalForms.value = currentIndex + 1;
+        
+        // Initialize new form fields
+        newKRA.querySelectorAll('input, textarea').forEach(input => {
+            if (input.type === 'text' || input.type === 'number' || input.tagName === 'TEXTAREA') {
+                input.value = '';
+            }
+        });
+        
+        // Add animation class
+        newKRA.classList.add('newly-added');
+        setTimeout(() => {
+            newKRA.classList.remove('newly-added');
+        }, 1000);
+        
+        // Scroll to new KRA with smooth animation
+        newKRA.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Auto-focus the first input field
+        const firstInput = newKRA.querySelector('textarea, input[type="text"]');
+        if (firstInput) {
+            setTimeout(() => {
+                firstInput.focus();
+            }, 500);
+        }
+        
+        calculateTotalWeight();
+    }
+}
+
+function calculateTotalWeight() {
+    const weightInputs = document.querySelectorAll('input[name$="-weighting"]');
+    let total = 0;
+    
+    weightInputs.forEach(input => {
+        if (!input.closest('.kra-card').querySelector('input[name$="-DELETE"]').checked) {
+            const weight = parseFloat(input.value) || 0;
+            total += weight;
+            
+            // Update individual weight badge
+            const weightBadge = input.closest('.kra-card').querySelector('.weight-value');
+            if (weightBadge) {
+                weightBadge.textContent = weight + '%';
+            }
+            
+            // Highlight the KRA card based on weight
+            const kraCard = input.closest('.kra-card');
+            kraCard.classList.remove('weight-low', 'weight-medium', 'weight-high');
+            
+            if (weight > 30) {
+                kraCard.classList.add('weight-high');
+            } else if (weight > 15) {
+                kraCard.classList.add('weight-medium');
+            } else if (weight > 0) {
+                kraCard.classList.add('weight-low');
+            }
+        }
+    });
+    
+    const totalElement = document.getElementById('totalWeight');
+    const indicator = document.querySelector('.weight-total-indicator');
+    
+    totalElement.textContent = total.toFixed(2);
+    
+    // Update indicator styling
+    indicator.classList.remove('warning', 'success');
+    if (Math.abs(total - 100) > 0.01) {
+        indicator.classList.add('warning');
+    } else {
+        indicator.classList.add('success');
+    }
+}
 </script>
 {% endblock %} 

@@ -1,0 +1,144 @@
+{% load static %}
+
+<style>
+.kra-bar {
+    margin: 10px 0;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.kra-header {
+    padding: 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s;
+}
+
+.kra-header:hover {
+    filter: brightness(95%);
+}
+
+.kra-content {
+    padding: 20px;
+    display: none;
+    background-color: white;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.kra-status-completed {
+    background-color: #4CAF50;  /* Green */
+    color: white;
+}
+
+.kra-status-in-progress {
+    background-color: #FFC107;  /* Yellow */
+    color: black;
+}
+
+.kra-status-not-started {
+    background-color: #F44336;  /* Red */
+    color: white;
+}
+
+.kra-progress {
+    width: 100px;
+    height: 10px;
+    background-color: rgba(255,255,255,0.3);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.kra-progress-bar {
+    height: 100%;
+    background-color: rgba(255,255,255,0.8);
+    transition: width 0.3s;
+}
+
+.kra-toggle-icon {
+    transition: transform 0.3s;
+}
+
+.kra-toggle-icon.expanded {
+    transform: rotate(180deg);
+}
+</style>
+
+<div class="kra-list">
+    {% for kra in kras %}
+        {% with progress=kra.calculate_progress %}
+            <div class="kra-bar">
+                <div class="kra-header {% if progress == 100 %}kra-status-completed{% elif progress > 0 %}kra-status-in-progress{% else %}kra-status-not-started{% endif %}"
+                     onclick="toggleKRA(this)">
+                    <div class="kra-title">
+                        <strong>{{ kra.description }}</strong>
+                        <span class="kra-weight">({{ kra.weighting }}%)</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="kra-progress me-3">
+                            <div class="kra-progress-bar" style="width: {{ progress }}%"></div>
+                        </div>
+                        <i class="fas fa-chevron-down kra-toggle-icon"></i>
+                    </div>
+                </div>
+                <div class="kra-content">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Performance Objective</h5>
+                            <p>{{ kra.performance_objective }}</p>
+                            
+                            <h5>Measurement</h5>
+                            <p>{{ kra.measurement }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Target Date</h5>
+                            <p>{{ kra.target_date|date:"F d, Y" }}</p>
+                            
+                            <h5>Tools Required</h5>
+                            <p>{{ kra.tools|default:"None specified" }}</p>
+                            
+                            <h5>Potential Barriers</h5>
+                            <p>{{ kra.barriers|default:"None specified" }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if kra.supporting_documents %}
+                    <div class="mt-3">
+                        <h5>Supporting Documents</h5>
+                        <a href="{{ kra.supporting_documents.url }}" target="_blank" class="btn btn-sm btn-primary">
+                            <i class="fas fa-download"></i> Download Evidence
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endwith %}
+    {% endfor %}
+</div>
+
+<script>
+function toggleKRA(header) {
+    const content = header.nextElementSibling;
+    const icon = header.querySelector('.kra-toggle-icon');
+    
+    if (content.style.display === 'block') {
+        content.style.display = 'none';
+        icon.classList.remove('expanded');
+    } else {
+        content.style.display = 'block';
+        icon.classList.add('expanded');
+    }
+}
+
+// Optional: Add animation when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const kras = document.querySelectorAll('.kra-bar');
+    kras.forEach((kra, index) => {
+        setTimeout(() => {
+            kra.style.opacity = '1';
+        }, index * 100);
+    });
+});
+</script> 

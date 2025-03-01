@@ -69,7 +69,7 @@ class Command(BaseCommand):
         # Check reviews that need attention
         reviews = MidYearReview.objects.filter(
             Q(performance_agreement__employee=user) | Q(performance_agreement__employee__manager=user),
-            final_rating__isnull=True
+            status__in=['DRAFT', 'PENDING_EMPLOYEE_RATING', 'PENDING_SUPERVISOR_RATING']
         )
 
         for review in reviews:

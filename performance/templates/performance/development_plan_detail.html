@@ -11,11 +11,11 @@
                     <h4 class="mb-0">Development Plan Details</h4>
                     <div>
                         {% if object.can_edit %}
-                        <a href="{% url 'development_plan_update' object.pk %}" class="btn btn-outline-primary">
+                        <a href="{% url 'performance:development_plan_update' object.pk %}" class="btn btn-outline-primary">
                             Edit Plan
                         </a>
                         {% endif %}
-                        <a href="{% url 'development_plan_list' %}" class="btn btn-outline-secondary">
+                        <a href="{% url 'performance:development_plan_list' %}" class="btn btn-outline-secondary">
                             Back to List
                         </a>
                     </div>

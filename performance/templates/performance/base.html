@@ -32,6 +32,9 @@
                         <a class="nav-link" href="{% url 'performance:midyear_review_list' %}">Reviews</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'performance:final_review_list' %}">Year-End Reviews</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'performance:improvement_plan_list' %}">Improvement Plans</a>
                     </li>
                     <li class="nav-item">
@@ -49,7 +52,10 @@
                         <a class="nav-link" href="{% url 'performance:profile' %}">Profile</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'admin:logout' %}">Logout</a>
+                        <form method="post" action="{% url 'logout' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-link border-0 bg-transparent">Logout</button>
+                        </form>
                     </li>
                 </ul>
             </div>
@@ -75,6 +81,13 @@
                                href="{% url 'performance:midyear_review_list' %}">
                                 <i class="bi bi-calendar-check me-2"></i>
                                 Mid-Year Reviews
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {% if request.resolver_match.url_name == 'final_review_list' %}active{% endif %}" 
+                               href="{% url 'performance:final_review_list' %}">
+                                <i class="bi bi-calendar-event me-2"></i>
+                                Year-End Reviews
                             </a>
                         </li>
                         <li class="nav-item">

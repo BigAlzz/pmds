@@ -1,0 +1,35 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Vibe Coding Rules
+
+## 1. Code Should Feel Good
+- If it feels too complicated, refactor or break it into smaller parts.
+- If a solution feels forced, there's probably a better way.
+
+## 2. Keep It Playful
+- Name functions and variables in a way that makes sense to *you*.
+- Use fun comments and reminders so future-you enjoys reading your code.
+
+## 3. Ship First, Optimize Later
+- Get things working *first*, then make them better.
+- Don't overthink performance unless it's actually slowing things down.
+
+## 4. The “If It Ain’t Broken” Rule
+- Avoid premature refactoring. If it's working well, move on.
+- Only refactor if it's actively getting in your way.
+
+## 5. Magic is Allowed (Sometimes)
+- If something works and you don’t fully understand why… that’s okay.
+- But keep a “mystery list” of things you want to learn about later.
+
+## 6. Minimize Annoyances
+- If something annoys you every time you code, automate or fix it.
+- Shortcuts, scripts, or better folder structures can make life easier.
+
+## 7. Errors Are Just Part of the Jam
+- Debugging is *not* failure, it’s part of the process.
+- Break things fearlessly—just use version control (Git) so you can always go back.
+

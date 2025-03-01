@@ -1,0 +1,541 @@
+{% extends 'performance/base.html' %}
+{% load static %}
+{% load performance_tags %}
+
+{% block title %}Year-End Review Details - Performance Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .review-header {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .review-section {
+        background-color: #fff;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .rating-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+    
+    .rating-card-header {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .rating-card-body {
+        padding: 1rem;
+    }
+    
+    .rating-section {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .rating-section:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .rating-badge {
+        font-size: 1rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .evidence-file {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+    }
+    
+    .label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .assessment-table th, .assessment-table td {
+        padding: 0.75rem;
+    }
+    
+    .workflow-timeline {
+        position: relative;
+        padding-left: 30px;
+        margin-bottom: 20px;
+    }
+    
+    .workflow-timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #dee2e6;
+    }
+    
+    .workflow-step {
+        position: relative;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+    }
+    
+    .workflow-step::before {
+        content: '';
+        position: absolute;
+        left: -30px;
+        top: 5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #fff;
+        border: 2px solid #dee2e6;
+    }
+    
+    .workflow-step.completed::before {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    
+    .workflow-step.active::before {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    
+    .workflow-step.rejected::before {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    
+    .workflow-step-date {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-11">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Year-End Review Details</h4>
+                    <div>
+                        {% if review.status != 'COMPLETED' and review.status != 'REJECTED' %}
+                            {% if user == review.performance_agreement.employee or user == review.performance_agreement.supervisor or user == review.performance_agreement.supervisor.manager %}
+                                <a href="{% url 'performance:final_review_update' review.id %}" class="btn btn-primary">
+                                    <i class="bi bi-pencil"></i> Edit Review
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                        <a href="{% url 'performance:final_review_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Review Header -->
+                    <div class="review-header">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Employee Information</h5>
+                                <p><strong>Name:</strong> {{ review.performance_agreement.employee.get_full_name }}</p>
+                                <p><strong>Job Title:</strong> {{ review.performance_agreement.employee.job_title }}</p>
+                                <p><strong>Department:</strong> {{ review.performance_agreement.employee.department }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Review Information</h5>
+                                <p><strong>Review Date:</strong> {{ review.review_date|date:"F d, Y" }}</p>
+                                <p><strong>Status:</strong> <span class="badge {% if review.status == 'COMPLETED' %}bg-success{% elif review.status == 'DRAFT' %}bg-secondary{% else %}bg-primary{% endif %}">{{ review.get_status_display }}</span></p>
+                                <p><strong>Supervisor:</strong> {{ review.performance_agreement.supervisor.get_full_name }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Workflow Status Timeline -->
+                    <div class="review-section">
+                        <h5 class="mb-3">Workflow Status</h5>
+                        <div class="workflow-timeline">
+                            <div class="workflow-step {% if review.status != 'DRAFT' %}completed{% endif %} {% if review.status == 'DRAFT' %}active{% endif %}">
+                                <h6>Draft</h6>
+                                <p class="mb-0">Initial creation of the review</p>
+                            </div>
+                            
+                            <div class="workflow-step {% if review.employee_rating_date %}completed{% endif %} {% if review.status == 'PENDING_EMPLOYEE_RATING' %}active{% endif %}">
+                                <h6>Employee Rating</h6>
+                                {% if review.employee_rating_date %}
+                                    <p class="workflow-step-date">{{ review.employee_rating_date|date:"F d, Y H:i" }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="workflow-step {% if review.supervisor_rating_date %}completed{% endif %} {% if review.status == 'PENDING_SUPERVISOR_RATING' %}active{% endif %}">
+                                <h6>Supervisor Rating</h6>
+                                {% if review.supervisor_rating_date %}
+                                    <p class="workflow-step-date">{{ review.supervisor_rating_date|date:"F d, Y H:i" }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="workflow-step {% if review.supervisor_signoff_date %}completed{% endif %} {% if review.status == 'PENDING_SUPERVISOR_SIGNOFF' %}active{% endif %}">
+                                <h6>Supervisor Sign-off</h6>
+                                {% if review.supervisor_signoff_date %}
+                                    <p class="workflow-step-date">{{ review.supervisor_signoff_date|date:"F d, Y H:i" }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="workflow-step {% if review.manager_approval_date %}completed{% endif %} {% if review.status == 'PENDING_MANAGER_APPROVAL' %}active{% endif %}">
+                                <h6>Manager Approval</h6>
+                                {% if review.manager_approval_date %}
+                                    <p class="workflow-step-date">{{ review.manager_approval_date|date:"F d, Y H:i" }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="workflow-step {% if review.completion_date %}completed{% endif %} {% if review.status == 'COMPLETED' %}active{% endif %}">
+                                <h6>Completed</h6>
+                                {% if review.completion_date %}
+                                    <p class="workflow-step-date">{{ review.completion_date|date:"F d, Y H:i" }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            {% if review.status == 'REJECTED' %}
+                            <div class="workflow-step rejected active">
+                                <h6>Rejected</h6>
+                                {% if review.rejection_date %}
+                                    <p class="workflow-step-date">{{ review.rejection_date|date:"F d, Y H:i" }}</p>
+                                {% endif %}
+                                {% if review.rejection_reason %}
+                                    <div class="alert alert-danger mt-2">
+                                        <strong>Reason:</strong> {{ review.rejection_reason }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- KRA Ratings -->
+                    <div class="review-section">
+                        <h5 class="mb-3">Key Responsibility Areas (KRAs)</h5>
+                        
+                        {% for rating in kra_ratings %}
+                        <div class="rating-card">
+                            <div class="rating-card-header">
+                                <h6 class="mb-0">KRA {{ forloop.counter }}: {{ rating.kra.description|truncatechars:100 }}</h6>
+                                <small class="text-muted">Weight: {{ rating.kra.weighting }}% | Target: {{ rating.kra.target_date|date:"M d, Y" }}</small>
+                            </div>
+                            <div class="rating-card-body">
+                                <div class="row">
+                                    <!-- Employee Rating -->
+                                    <div class="col-md-6 rating-section">
+                                        <h6 class="text-primary">Employee Rating</h6>
+                                        {% if rating.employee_rating %}
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary rating-badge">{{ rating.get_employee_rating_display }}</span>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if rating.employee_comments %}
+                                        <div class="mb-2">
+                                            <span class="label">Comments:</span>
+                                            <p>{{ rating.employee_comments }}</p>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if rating.employee_evidence %}
+                                        <div class="mb-2">
+                                            <span class="label">Evidence:</span>
+                                            <p>{{ rating.employee_evidence }}</p>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if rating.employee_evidence_file %}
+                                        <div class="evidence-file">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span><i class="bi bi-file-earmark"></i> {{ rating.get_evidence_filename }}</span>
+                                                <div>
+                                                    <a href="{{ rating.employee_evidence_file.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </a>
+                                                    <a href="{{ rating.employee_evidence_file.url }}" class="btn btn-sm btn-secondary" download>
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Supervisor Rating -->
+                                    <div class="col-md-6 rating-section">
+                                        <h6 class="text-primary">Supervisor Rating</h6>
+                                        {% if rating.supervisor_rating %}
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary rating-badge">{{ rating.get_supervisor_rating_display }}</span>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if rating.supervisor_comments %}
+                                        <div class="mb-2">
+                                            <span class="label">Comments:</span>
+                                            <p>{{ rating.supervisor_comments }}</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Final Agreed Rating -->
+                                {% if rating.agreed_rating %}
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="card bg-light">
+                                            <div class="card-header">
+                                                <h6 class="text-primary mb-0">Final Agreed Rating</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <span class="badge bg-success rating-badge">{{ rating.get_agreed_rating_display }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- GAF Ratings -->
+                    <div class="review-section">
+                        <h5 class="mb-3">Generic Assessment Factors (GAFs)</h5>
+                        
+                        {% for rating in gaf_ratings %}
+                        <div class="rating-card">
+                            <div class="rating-card-header">
+                                <h6 class="mb-0">GAF {{ forloop.counter }}: {{ rating.gaf.get_factor_display }}</h6>
+                            </div>
+                            <div class="rating-card-body">
+                                <div class="row">
+                                    <!-- Employee Rating -->
+                                    <div class="col-md-6 rating-section">
+                                        <h6 class="text-primary">Employee Rating</h6>
+                                        {% if rating.employee_rating %}
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary rating-badge">{{ rating.get_employee_rating_display }}</span>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if rating.employee_comments %}
+                                        <div class="mb-2">
+                                            <span class="label">Comments:</span>
+                                            <p>{{ rating.employee_comments }}</p>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if rating.employee_evidence %}
+                                        <div class="mb-2">
+                                            <span class="label">Evidence:</span>
+                                            <p>{{ rating.employee_evidence }}</p>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if rating.employee_evidence_file %}
+                                        <div class="evidence-file">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span><i class="bi bi-file-earmark"></i> {{ rating.get_evidence_filename }}</span>
+                                                <div>
+                                                    <a href="{{ rating.employee_evidence_file.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </a>
+                                                    <a href="{{ rating.employee_evidence_file.url }}" class="btn btn-sm btn-secondary" download>
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Supervisor Rating -->
+                                    <div class="col-md-6 rating-section">
+                                        <h6 class="text-primary">Supervisor Rating</h6>
+                                        {% if rating.supervisor_rating %}
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary rating-badge">{{ rating.get_supervisor_rating_display }}</span>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if rating.supervisor_comments %}
+                                        <div class="mb-2">
+                                            <span class="label">Comments:</span>
+                                            <p>{{ rating.supervisor_comments }}</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Overall Comments -->
+                    <div class="review-section">
+                        <h5 class="mb-3">Overall Comments</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-primary">Employee Comments</h6>
+                                {% if review.employee_overall_comments %}
+                                <p>{{ review.employee_overall_comments }}</p>
+                                {% else %}
+                                <p class="text-muted">No comments provided.</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-primary">Supervisor Comments</h6>
+                                {% if review.supervisor_overall_comments %}
+                                <p>{{ review.supervisor_overall_comments }}</p>
+                                {% else %}
+                                <p class="text-muted">No comments provided.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if review.evidence_document %}
+                        <div class="mt-3">
+                            <h6 class="text-primary">Supporting Documents</h6>
+                            <div class="evidence-file">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-file-earmark"></i> {{ review.evidence_document.name|slice:"20:" }}</span>
+                                    <div>
+                                        <a href="{{ review.evidence_document.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                        <a href="{{ review.evidence_document.url }}" class="btn btn-sm btn-secondary" download>
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Assessment Rating Calculator -->
+                    <div class="review-section">
+                        <h5 class="mb-3">Assessment Rating Calculator</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered assessment-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>KRAs</th>
+                                        <th>Weight</th>
+                                        <th>Rating</th>
+                                        <th>Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rating in kra_ratings %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}. {{ rating.kra.description|truncatechars:50 }}</td>
+                                        <td>{{ rating.kra.weighting }}%</td>
+                                        <td>
+                                            {% if rating.agreed_rating %}
+                                                {{ rating.agreed_rating }}
+                                            {% elif rating.supervisor_rating %}
+                                                {{ rating.supervisor_rating }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if rating.agreed_rating %}
+                                                {{ rating.kra.weighting|multiply:rating.agreed_rating|divide:100 }}
+                                            {% elif rating.supervisor_rating %}
+                                                {{ rating.kra.weighting|multiply:rating.supervisor_rating|divide:100 }}
+                                            {% else %}
+                                                0
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-secondary">
+                                        <td colspan="1"></td>
+                                        <td>
+                                            {% with total_weight=kra_ratings|sum_attr:"kra.weighting" %}
+                                                {{ total_weight }}%
+                                            {% endwith %}
+                                        </td>
+                                        <td></td>
+                                        <td>
+                                            {% with total_score=0 %}
+                                                {% for rating in kra_ratings %}
+                                                    {% if rating.agreed_rating %}
+                                                        {% with score=rating.kra.weighting|multiply:rating.agreed_rating|divide:100 %}
+                                                            {% with total_score=total_score|add:score %}
+                                                                {% if forloop.last %}{{ total_score }}{% endif %}
+                                                            {% endwith %}
+                                                        {% endwith %}
+                                                    {% elif rating.supervisor_rating %}
+                                                        {% with score=rating.kra.weighting|multiply:rating.supervisor_rating|divide:100 %}
+                                                            {% with total_score=total_score|add:score %}
+                                                                {% if forloop.last %}{{ total_score }}{% endif %}
+                                                            {% endwith %}
+                                                        {% endwith %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endwith %}
+                                        </td>
+                                    </tr>
+                                    <tr class="table-warning">
+                                        <th colspan="3">FINAL SCORE</th>
+                                        <th>
+                                            {% with total_score=0 %}
+                                                {% for rating in kra_ratings %}
+                                                    {% if rating.agreed_rating %}
+                                                        {% with score=rating.kra.weighting|multiply:rating.agreed_rating|divide:100 %}
+                                                            {% with total_score=total_score|add:score %}
+                                                                {% if forloop.last %}
+                                                                    {% with percentage=total_score|multiply:100|divide:4 %}
+                                                                        {{ percentage|floatformat:0 }}%
+                                                                    {% endwith %}
+                                                                {% endif %}
+                                                            {% endwith %}
+                                                        {% endwith %}
+                                                    {% elif rating.supervisor_rating %}
+                                                        {% with score=rating.kra.weighting|multiply:rating.supervisor_rating|divide:100 %}
+                                                            {% with total_score=total_score|add:score %}
+                                                                {% if forloop.last %}
+                                                                    {% with percentage=total_score|multiply:100|divide:4 %}
+                                                                        {{ percentage|floatformat:0 }}%
+                                                                    {% endwith %}
+                                                                {% endif %}
+                                                            {% endwith %}
+                                                        {% endwith %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endwith %}
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

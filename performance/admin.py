@@ -7,7 +7,9 @@ from .models import (
     ImprovementPlan,
     PersonalDevelopmentPlan,
     Feedback,
-    AuditLog
+    AuditLog,
+    KRAMidYearRating,
+    GAFMidYearRating
 )
 
 @admin.register(CustomUser)
@@ -26,8 +28,8 @@ class PerformanceAgreementAdmin(admin.ModelAdmin):
 
 @admin.register(MidYearReview)
 class MidYearReviewAdmin(admin.ModelAdmin):
-    list_display = ('performance_agreement', 'final_rating', 'review_date')
-    list_filter = ('final_rating', 'review_date')
+    list_display = ('performance_agreement', 'review_date', 'status')
+    list_filter = ('status', 'review_date')
     search_fields = ('performance_agreement__employee__username',)
 
 @admin.register(ImprovementPlan)
@@ -54,3 +56,15 @@ class AuditLogAdmin(admin.ModelAdmin):
     list_filter = ('action', 'model', 'timestamp')
     search_fields = ('user__username', 'changes')
     readonly_fields = ('user', 'model', 'instance_id', 'action', 'timestamp', 'changes')
+
+@admin.register(KRAMidYearRating)
+class KRAMidYearRatingAdmin(admin.ModelAdmin):
+    list_display = ('midyear_review', 'kra', 'employee_rating', 'supervisor_rating')
+    list_filter = ('employee_rating', 'supervisor_rating')
+    search_fields = ('midyear_review__performance_agreement__employee__username', 'kra__description')
+
+@admin.register(GAFMidYearRating)
+class GAFMidYearRatingAdmin(admin.ModelAdmin):
+    list_display = ('midyear_review', 'gaf', 'employee_rating', 'supervisor_rating')
+    list_filter = ('employee_rating', 'supervisor_rating')
+    search_fields = ('midyear_review__performance_agreement__employee__username', 'gaf__factor')
